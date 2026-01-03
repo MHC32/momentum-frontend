@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gradient-to-br from-momentum-bg to-[#1a1f2e] text-[#E8F1F5] min-h-screen;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  }
+}
+
+@layer components {
+  /* Glassmorphism card effect */
+  .glass-card {
+    @apply bg-momentum-dark/30 backdrop-blur-md border border-momentum-light-1/15 rounded-2xl;
+  }
+
+  /* Button styles */
+  .btn-primary {
+    @apply bg-gradient-to-r from-momentum-light-2 to-momentum-accent text-momentum-dark font-semibold px-5 py-2.5 rounded-lg transition-all hover:shadow-lg hover:shadow-momentum-light-2/30 hover:-translate-y-0.5;
+  }
+
+  .btn-secondary {
+    @apply bg-momentum-accent/10 text-momentum-light-2 border border-momentum-accent/30 font-semibold px-5 py-2.5 rounded-lg transition-all hover:bg-momentum-accent/20;
+  }
+
+  /* Input styles */
+  .input-field {
+    @apply w-full bg-momentum-dark/40 border border-momentum-light-1/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-momentum-light-2 focus:ring-2 focus:ring-momentum-light-2/20 transition-all;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 29, 57, 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(123, 189, 232, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(123, 189, 232, 0.5);
+}
