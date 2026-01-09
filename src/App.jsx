@@ -7,6 +7,8 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Projects from './pages/Projects'
 import Kanban from './pages/Kanban'
+import GoalsHierarchy from './pages/GoalsHierarchy';
+import GoalsChecklist from './pages/GoalsChecklist';
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -46,6 +48,8 @@ function App() {
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/projects" element=<Projects /> replace />
       <Route path="/projects/:projectId/kanban" element=<Kanban /> replace />
+      <Route path="/goals-2026" element={<GoalsHierarchy />} />
+      <Route path="/goals-perso" element={<GoalsChecklist />} />
     </Routes>
   )
 }

@@ -1,503 +1,417 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import goalService from '../../services/goalService';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import goalService from '../../services/goalService'
 
-// State initial
 const initialState = {
-  // Objectifs hiérarchiques (Objectifs 2026)
   hierarchyGoals: [],
-  
-  // Objectifs checklist (Objectifs Perso)
   checklistGoals: [],
-  
-  // Objectif actuellement sélectionné
   currentGoal: null,
-  
-  // Filtres pour la vue hiérarchique
   hierarchyFilters: {
-    level: 'annual', // annual, quarterly, monthly, weekly, daily
-    category: null,  // financial, professional, learning, personal, health
-    year: new Date().getFullYear()
+    level: 'annual',
+    category: null,
+    year: 2026
   },
-  
-  // Stats
   stats: null,
-  
-  // États de chargement
   isLoading: false,
   isCreating: false,
   isUpdating: false,
   isDeleting: false,
-  
-  // Erreurs
+  isError: false,
+  isSuccess: false,
   error: null,
-  
-  // Messages de succès
   successMessage: null
-};
+}
 
-// ==================== ASYNC THUNKS ====================
+// ==================== THUNKS ASYNC ====================
 
-/**
- * Obtenir tous les objectifs avec filtres
- */
+// Get all goals
 export const getGoals = createAsyncThunk(
-  'goals/getGoals',
+  'goals/getAll',
   async (filters, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.user.token;
-      return await goalService.getGoals(filters, token);
+      return await goalService.getGoals(filters)
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message
+      return thunkAPI.rejectWithValue(message)
     }
   }
-);
+)
 
-/**
- * Obtenir un objectif par ID
- */
+// Get single goal
 export const getGoalById = createAsyncThunk(
-  'goals/getGoalById',
+  'goals/getOne',
   async (goalId, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.user.token;
-      return await goalService.getGoalById(goalId, token);
+      return await goalService.getGoalById(goalId)
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message
+      return thunkAPI.rejectWithValue(message)
     }
   }
-);
+)
 
-/**
- * Créer un nouvel objectif
- */
+// Create goal
 export const createGoal = createAsyncThunk(
-  'goals/createGoal',
+  'goals/create',
   async (goalData, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.user.token;
-      return await goalService.createGoal(goalData, token);
+      return await goalService.createGoal(goalData)
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message
+      return thunkAPI.rejectWithValue(message)
     }
   }
-);
+)
 
-/**
- * Mettre à jour un objectif
- */
+// Update goal
 export const updateGoal = createAsyncThunk(
-  'goals/updateGoal',
+  'goals/update',
   async ({ goalId, goalData }, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.user.token;
-      return await goalService.updateGoal(goalId, goalData, token);
+      return await goalService.updateGoal(goalId, goalData)
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message
+      return thunkAPI.rejectWithValue(message)
     }
   }
-);
+)
 
-/**
- * Supprimer un objectif
- */
+// Delete goal
 export const deleteGoal = createAsyncThunk(
-  'goals/deleteGoal',
+  'goals/delete',
   async (goalId, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.user.token;
-      return await goalService.deleteGoal(goalId, token);
+      await goalService.deleteGoal(goalId)
+      return goalId
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message
+      return thunkAPI.rejectWithValue(message)
     }
   }
-);
+)
 
-/**
- * Mettre à jour la progression
- */
+// Update progress
 export const updateProgress = createAsyncThunk(
   'goals/updateProgress',
   async ({ goalId, progressData }, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.user.token;
-      return await goalService.updateProgress(goalId, progressData, token);
+      return await goalService.updateProgress(goalId, progressData)
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message
+      return thunkAPI.rejectWithValue(message)
     }
   }
-);
+)
 
-/**
- * Compléter une étape
- */
+// Complete step
 export const completeStep = createAsyncThunk(
   'goals/completeStep',
   async ({ goalId, stepId }, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.user.token;
-      return await goalService.completeStep(goalId, stepId, token);
+      return await goalService.completeStep(goalId, stepId)
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message
+      return thunkAPI.rejectWithValue(message)
     }
   }
-);
+)
 
-/**
- * Recalculer depuis les enfants
- */
+// Recalculate from children
 export const recalculateFromChildren = createAsyncThunk(
-  'goals/recalculateFromChildren',
+  'goals/recalculate',
   async (goalId, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.user.token;
-      return await goalService.recalculateFromChildren(goalId, token);
+      return await goalService.recalculateFromChildren(goalId)
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message
+      return thunkAPI.rejectWithValue(message)
     }
   }
-);
+)
 
-/**
- * Synchroniser les commits
- */
+// Sync commits goal
 export const syncCommitsGoal = createAsyncThunk(
-  'goals/syncCommitsGoal',
+  'goals/syncCommits',
   async (_, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.user.token;
-      return await goalService.syncCommitsGoal(token);
+      return await goalService.syncCommitsGoal()
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message
+      return thunkAPI.rejectWithValue(message)
     }
   }
-);
+)
 
-/**
- * Synchroniser les livres
- */
+// Sync book goal
 export const syncBookGoal = createAsyncThunk(
-  'goals/syncBookGoal',
+  'goals/syncBook',
   async (projectId, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.user.token;
-      return await goalService.syncBookGoal(projectId, token);
+      return await goalService.syncBookGoal(projectId)
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message
+      return thunkAPI.rejectWithValue(message)
     }
   }
-);
+)
 
-/**
- * Obtenir les stats
- */
+// Get goals stats
 export const getGoalsStats = createAsyncThunk(
-  'goals/getGoalsStats',
+  'goals/getStats',
   async (filters, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.user.token;
-      return await goalService.getGoalsStats(filters, token);
+      return await goalService.getGoalsStats(filters)
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
+      const message = error.response?.data?.message || error.message
+      return thunkAPI.rejectWithValue(message)
     }
   }
-);
+)
 
 // ==================== SLICE ====================
 
-const goalSlice = createSlice({
+export const goalSlice = createSlice({
   name: 'goals',
   initialState,
   reducers: {
-    // Réinitialiser l'état
     reset: (state) => {
-      state.hierarchyGoals = [];
-      state.checklistGoals = [];
-      state.currentGoal = null;
-      state.stats = null;
-      state.isLoading = false;
-      state.isCreating = false;
-      state.isUpdating = false;
-      state.isDeleting = false;
-      state.error = null;
-      state.successMessage = null;
+      state.isLoading = false
+      state.isCreating = false
+      state.isUpdating = false
+      state.isDeleting = false
+      state.isError = false
+      state.isSuccess = false
+      state.error = null
+      state.successMessage = null
     },
-    
-    // Changer le niveau hiérarchique
     setHierarchyLevel: (state, action) => {
-      state.hierarchyFilters.level = action.payload;
+      state.hierarchyFilters.level = action.payload
     },
-    
-    // Changer la catégorie
     setHierarchyCategory: (state, action) => {
-      state.hierarchyFilters.category = action.payload;
+      state.hierarchyFilters.category = action.payload
     },
-    
-    // Changer l'année
     setHierarchyYear: (state, action) => {
-      state.hierarchyFilters.year = action.payload;
+      state.hierarchyFilters.year = action.payload
     },
-    
-    // Effacer l'objectif actuel
     clearCurrentGoal: (state) => {
-      state.currentGoal = null;
+      state.currentGoal = null
     },
-    
-    // Effacer les messages
     clearMessages: (state) => {
-      state.error = null;
-      state.successMessage = null;
+      state.error = null
+      state.successMessage = null
     },
-    
-    // ==================== SOCKET.IO EVENTS ====================
-    
-    // Objectif créé (temps réel)
+    // Socket.IO real-time updates
     goalCreatedRealtime: (state, action) => {
-      const goal = action.payload.goal;
-      
+      const goal = action.payload
       if (goal.display_in_hierarchy) {
-        state.hierarchyGoals.unshift(goal);
+        state.hierarchyGoals.unshift(goal)
       }
-      
       if (goal.display_in_checklist) {
-        state.checklistGoals.unshift(goal);
+        state.checklistGoals.unshift(goal)
       }
     },
-    
-    // Objectif mis à jour (temps réel)
     goalUpdatedRealtime: (state, action) => {
-      const updatedGoal = action.payload.goal;
+      const updatedGoal = action.payload
       
-      // Mettre à jour dans hierarchyGoals
-      const hierarchyIndex = state.hierarchyGoals.findIndex(
-        g => g._id === updatedGoal._id
-      );
+      // Update in hierarchy
+      const hierarchyIndex = state.hierarchyGoals.findIndex(g => g._id === updatedGoal._id)
       if (hierarchyIndex !== -1) {
-        state.hierarchyGoals[hierarchyIndex] = updatedGoal;
+        state.hierarchyGoals[hierarchyIndex] = updatedGoal
       }
       
-      // Mettre à jour dans checklistGoals
-      const checklistIndex = state.checklistGoals.findIndex(
-        g => g._id === updatedGoal._id
-      );
+      // Update in checklist
+      const checklistIndex = state.checklistGoals.findIndex(g => g._id === updatedGoal._id)
       if (checklistIndex !== -1) {
-        state.checklistGoals[checklistIndex] = updatedGoal;
+        state.checklistGoals[checklistIndex] = updatedGoal
       }
       
-      // Mettre à jour currentGoal si c'est le même
+      // Update current goal
       if (state.currentGoal?._id === updatedGoal._id) {
-        state.currentGoal = updatedGoal;
+        state.currentGoal = updatedGoal
       }
     },
-    
-    // Objectif supprimé (temps réel)
     goalDeletedRealtime: (state, action) => {
-      const goalId = action.payload.goalId;
-      
-      state.hierarchyGoals = state.hierarchyGoals.filter(g => g._id !== goalId);
-      state.checklistGoals = state.checklistGoals.filter(g => g._id !== goalId);
-      
+      const goalId = action.payload
+      state.hierarchyGoals = state.hierarchyGoals.filter(g => g._id !== goalId)
+      state.checklistGoals = state.checklistGoals.filter(g => g._id !== goalId)
       if (state.currentGoal?._id === goalId) {
-        state.currentGoal = null;
+        state.currentGoal = null
       }
     },
-    
-    // Progression mise à jour (temps réel)
     goalProgressUpdatedRealtime: (state, action) => {
-      const updatedGoal = action.payload.goal;
+      const updatedGoal = action.payload
       
-      // Même logique que goalUpdatedRealtime
-      const hierarchyIndex = state.hierarchyGoals.findIndex(
-        g => g._id === updatedGoal._id
-      );
+      const hierarchyIndex = state.hierarchyGoals.findIndex(g => g._id === updatedGoal._id)
       if (hierarchyIndex !== -1) {
-        state.hierarchyGoals[hierarchyIndex] = updatedGoal;
+        state.hierarchyGoals[hierarchyIndex] = updatedGoal
       }
       
-      const checklistIndex = state.checklistGoals.findIndex(
-        g => g._id === updatedGoal._id
-      );
+      const checklistIndex = state.checklistGoals.findIndex(g => g._id === updatedGoal._id)
       if (checklistIndex !== -1) {
-        state.checklistGoals[checklistIndex] = updatedGoal;
+        state.checklistGoals[checklistIndex] = updatedGoal
       }
       
       if (state.currentGoal?._id === updatedGoal._id) {
-        state.currentGoal = updatedGoal;
+        state.currentGoal = updatedGoal
       }
     }
   },
-  
   extraReducers: (builder) => {
     builder
-      // ==================== GET GOALS ====================
+      // Get goals
       .addCase(getGoals.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
+        state.isLoading = true
+        state.error = null
       })
       .addCase(getGoals.fulfilled, (state, action) => {
-        state.isLoading = false;
-        const goals = action.payload.data.goals;
+        state.isLoading = false
+        state.isSuccess = true
         
-        // Séparer selon display_in_*
-        state.hierarchyGoals = goals.filter(g => g.display_in_hierarchy);
-        state.checklistGoals = goals.filter(g => g.display_in_checklist);
+        // S'assurer que goals est toujours un array
+        const rawGoals = action.payload.data || action.payload || []
+        const goals = Array.isArray(rawGoals) ? rawGoals : []
+        
+        // Séparer selon display_in_hierarchy et display_in_checklist
+        if (action.meta.arg?.display_in_hierarchy) {
+          state.hierarchyGoals = goals
+        }
+        if (action.meta.arg?.display_in_checklist) {
+          state.checklistGoals = goals
+        }
+        if (!action.meta.arg?.display_in_hierarchy && !action.meta.arg?.display_in_checklist) {
+          state.hierarchyGoals = goals.filter(g => g.display_in_hierarchy)
+          state.checklistGoals = goals.filter(g => g.display_in_checklist)
+        }
       })
       .addCase(getGoals.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
+        state.isLoading = false
+        state.isError = true
+        state.error = action.payload
       })
       
-      // ==================== GET GOAL BY ID ====================
+      // Get single goal
       .addCase(getGoalById.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
+        state.isLoading = true
       })
       .addCase(getGoalById.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.currentGoal = action.payload.data.goal;
+        state.isLoading = false
+        state.isSuccess = true
+        state.currentGoal = action.payload.data
       })
       .addCase(getGoalById.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
+        state.isLoading = false
+        state.isError = true
+        state.error = action.payload
       })
       
-      // ==================== CREATE GOAL ====================
+      // Create goal
       .addCase(createGoal.pending, (state) => {
-        state.isCreating = true;
-        state.error = null;
+        state.isCreating = true
+        state.error = null
       })
       .addCase(createGoal.fulfilled, (state, action) => {
-        state.isCreating = false;
-        const goal = action.payload.data.goal;
+        state.isCreating = false
+        state.isSuccess = true
+        state.successMessage = 'Objectif créé avec succès'
         
-        // Ajouter dans la liste appropriée
-        if (goal.display_in_hierarchy) {
-          state.hierarchyGoals.unshift(goal);
+        const newGoal = action.payload.data
+        if (newGoal.display_in_hierarchy) {
+          state.hierarchyGoals.unshift(newGoal)
         }
-        
-        if (goal.display_in_checklist) {
-          state.checklistGoals.unshift(goal);
+        if (newGoal.display_in_checklist) {
+          state.checklistGoals.unshift(newGoal)
         }
-        
-        state.successMessage = action.payload.message;
       })
       .addCase(createGoal.rejected, (state, action) => {
-        state.isCreating = false;
-        state.error = action.payload;
+        state.isCreating = false
+        state.isError = true
+        state.error = action.payload
       })
       
-      // ==================== UPDATE GOAL ====================
+      // Update goal
       .addCase(updateGoal.pending, (state) => {
-        state.isUpdating = true;
-        state.error = null;
+        state.isUpdating = true
       })
       .addCase(updateGoal.fulfilled, (state, action) => {
-        state.isUpdating = false;
-        const updatedGoal = action.payload.data.goal;
+        state.isUpdating = false
+        state.isSuccess = true
+        state.successMessage = 'Objectif mis à jour'
         
-        // Mettre à jour dans hierarchyGoals
-        const hierarchyIndex = state.hierarchyGoals.findIndex(
-          g => g._id === updatedGoal._id
-        );
+        const updated = action.payload.data
+        
+        const hierarchyIndex = state.hierarchyGoals.findIndex(g => g._id === updated._id)
         if (hierarchyIndex !== -1) {
-          state.hierarchyGoals[hierarchyIndex] = updatedGoal;
+          state.hierarchyGoals[hierarchyIndex] = updated
         }
         
-        // Mettre à jour dans checklistGoals
-        const checklistIndex = state.checklistGoals.findIndex(
-          g => g._id === updatedGoal._id
-        );
+        const checklistIndex = state.checklistGoals.findIndex(g => g._id === updated._id)
         if (checklistIndex !== -1) {
-          state.checklistGoals[checklistIndex] = updatedGoal;
+          state.checklistGoals[checklistIndex] = updated
         }
         
-        if (state.currentGoal?._id === updatedGoal._id) {
-          state.currentGoal = updatedGoal;
+        if (state.currentGoal?._id === updated._id) {
+          state.currentGoal = updated
         }
-        
-        state.successMessage = action.payload.message;
       })
       .addCase(updateGoal.rejected, (state, action) => {
-        state.isUpdating = false;
-        state.error = action.payload;
+        state.isUpdating = false
+        state.isError = true
+        state.error = action.payload
       })
       
-      // ==================== DELETE GOAL ====================
+      // Delete goal
       .addCase(deleteGoal.pending, (state) => {
-        state.isDeleting = true;
-        state.error = null;
+        state.isDeleting = true
       })
       .addCase(deleteGoal.fulfilled, (state, action) => {
-        state.isDeleting = false;
-        const goalId = action.meta.arg;
+        state.isDeleting = false
+        state.isSuccess = true
+        state.successMessage = 'Objectif supprimé'
         
-        state.hierarchyGoals = state.hierarchyGoals.filter(g => g._id !== goalId);
-        state.checklistGoals = state.checklistGoals.filter(g => g._id !== goalId);
+        const deletedId = action.payload
+        state.hierarchyGoals = state.hierarchyGoals.filter(g => g._id !== deletedId)
+        state.checklistGoals = state.checklistGoals.filter(g => g._id !== deletedId)
         
-        if (state.currentGoal?._id === goalId) {
-          state.currentGoal = null;
+        if (state.currentGoal?._id === deletedId) {
+          state.currentGoal = null
         }
-        
-        state.successMessage = action.payload.message;
       })
       .addCase(deleteGoal.rejected, (state, action) => {
-        state.isDeleting = false;
-        state.error = action.payload;
+        state.isDeleting = false
+        state.isError = true
+        state.error = action.payload
       })
       
-      // ==================== UPDATE PROGRESS ====================
-      .addCase(updateProgress.pending, (state) => {
-        state.isUpdating = true;
-      })
+      // Update progress
       .addCase(updateProgress.fulfilled, (state, action) => {
-        state.isUpdating = false;
-        const updatedGoal = action.payload.data.goal;
+        const updated = action.payload.data
         
-        // Mettre à jour dans les listes
-        const hierarchyIndex = state.hierarchyGoals.findIndex(
-          g => g._id === updatedGoal._id
-        );
+        const hierarchyIndex = state.hierarchyGoals.findIndex(g => g._id === updated._id)
         if (hierarchyIndex !== -1) {
-          state.hierarchyGoals[hierarchyIndex] = updatedGoal;
+          state.hierarchyGoals[hierarchyIndex] = updated
         }
         
-        const checklistIndex = state.checklistGoals.findIndex(
-          g => g._id === updatedGoal._id
-        );
+        const checklistIndex = state.checklistGoals.findIndex(g => g._id === updated._id)
         if (checklistIndex !== -1) {
-          state.checklistGoals[checklistIndex] = updatedGoal;
+          state.checklistGoals[checklistIndex] = updated
         }
-        
-        if (state.currentGoal?._id === updatedGoal._id) {
-          state.currentGoal = updatedGoal;
-        }
-      })
-      .addCase(updateProgress.rejected, (state, action) => {
-        state.isUpdating = false;
-        state.error = action.payload;
       })
       
-      // ==================== COMPLETE STEP ====================
+      // Complete step
       .addCase(completeStep.fulfilled, (state, action) => {
-        const updatedGoal = action.payload.data.goal;
+        const updated = action.payload.data
         
-        const checklistIndex = state.checklistGoals.findIndex(
-          g => g._id === updatedGoal._id
-        );
+        const checklistIndex = state.checklistGoals.findIndex(g => g._id === updated._id)
         if (checklistIndex !== -1) {
-          state.checklistGoals[checklistIndex] = updatedGoal;
-        }
-        
-        if (state.currentGoal?._id === updatedGoal._id) {
-          state.currentGoal = updatedGoal;
+          state.checklistGoals[checklistIndex] = updated
         }
       })
       
-      // ==================== GET STATS ====================
+      // Get stats
       .addCase(getGoalsStats.fulfilled, (state, action) => {
-        state.stats = action.payload.data;
-      });
+        state.stats = action.payload.data
+      })
   }
-});
+})
 
 export const {
   reset,
@@ -510,6 +424,6 @@ export const {
   goalUpdatedRealtime,
   goalDeletedRealtime,
   goalProgressUpdatedRealtime
-} = goalSlice.actions;
+} = goalSlice.actions
 
-export default goalSlice.reducer;
+export default goalSlice.reducer
