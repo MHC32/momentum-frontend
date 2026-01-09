@@ -9,6 +9,7 @@ import {
 import { useSocket } from '../hooks/useSocket'
 import Sidebar from '../components/Sidebar'
 import GoalChecklistCard from '../components/goals/GoalChecklistCard'
+import GoalModal from '../components/GoalModal'
 
 function GoalsChecklist() {
   const dispatch = useDispatch()
@@ -210,37 +211,12 @@ function GoalsChecklist() {
         )}
       </main>
 
-      {/* Modal Placeholder */}
+      {/* Goal Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="glass-card max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold">Nouvel Objectif</h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="text-center py-8">
-              <svg className="w-16 h-16 mx-auto mb-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              <p className="text-gray-400 mb-4">
-                Le formulaire de création d'objectif sera implémenté prochainement.
-              </p>
-              <button
-                onClick={() => setShowModal(false)}
-                className="btn-secondary"
-              >
-                Fermer
-              </button>
-            </div>
-          </div>
-        </div>
+        <GoalModal 
+          onClose={() => setShowModal(false)}
+          defaultView="checklist"
+        />
       )}
     </div>
   )

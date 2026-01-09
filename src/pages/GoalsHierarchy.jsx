@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { 
   getGoals, 
@@ -10,10 +10,12 @@ import { useSocket } from '../hooks/useSocket'
 import Sidebar from '../components/Sidebar'
 import LevelTabs from '../components/goals/LevelTabs'
 import GoalCard from '../components/goals/GoalCard'
+import GoalModal from '../components/GoalModal'
 
 function GoalsHierarchy() {
   const dispatch = useDispatch()
   const { isConnected } = useSocket()
+  const [showModal, setShowModal] = useState(false)
   
   const { 
     hierarchyGoals, 
@@ -119,6 +121,9 @@ function GoalsHierarchy() {
               </div>
             )}
           </div>
+          <button onClick={() => setShowModal(true)} className="btn-primary">
+            + Créer un objectif
+          </button>
         </div>
 
         {/* Messages */}
@@ -182,7 +187,7 @@ function GoalsHierarchy() {
             <p className="text-gray-500 mb-4">
               Créez votre premier objectif annuel avec décomposition automatique
             </p>
-            <button className="btn-primary">
+            <button onClick={() => setShowModal(true)} className="btn-primary">
               Créer un objectif
             </button>
           </div>
@@ -223,6 +228,14 @@ function GoalsHierarchy() {
           </div>
         )}
       </main>
+
+      {/* Goal Modal */}
+      {showModal && (
+        <GoalModal 
+          onClose={() => setShowModal(false)}
+          defaultView="hierarchy"
+        />
+      )}
     </div>
   )
 }
