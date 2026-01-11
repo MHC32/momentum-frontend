@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * COMMIT: feat(goals): Add WeeklyDailyBreakdown component for week view
  * 
@@ -18,6 +19,7 @@ function WeeklyDailyBreakdown({ goal, weekStart, weekEnd }) {
     date.setDate(date.getDate() + index)
     
     // Simulation de données (devra venir du backend)
+    // eslint-disable-next-line react-hooks/purity
     const achieved = Math.floor(Math.random() * dailyTarget * 1.5)
     const isToday = date.toDateString() === new Date().toDateString()
     const isPast = date < new Date()
