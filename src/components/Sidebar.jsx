@@ -1,3 +1,9 @@
+/**
+ * COMMIT: feat(sidebar): Make year dynamic in Goals menu items
+ * 
+ * Met à jour le Sidebar pour afficher "Objectifs YYYY" avec l'année dynamique
+ */
+
 import { Link, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { logout } from '../redux/slices/authSlice'
@@ -18,6 +24,9 @@ function Sidebar() {
 
   const isActive = (path) => location.pathname === path
 
+  // Année dynamique
+  const currentYear = new Date().getFullYear()
+
   const navItems = [
     {
       section: 'Principal',
@@ -32,8 +41,8 @@ function Sidebar() {
           path: '/projects', 
           icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' 
         },
-         { 
-          name: 'Objectifs 2026', 
+        { 
+          name: `Objectifs ${currentYear}`, // 🎯 Année dynamique
           path: '/goals-2026', 
           icon: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z' 
         },
@@ -118,8 +127,11 @@ function Sidebar() {
           </div>
           <button
             onClick={handleLogout}
-            className="w-full mt-3 px-4 py-2 text-sm text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+            className="w-full mt-3 px-4 py-2 text-sm text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all flex items-center justify-center gap-2"
           >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
             Déconnexion
           </button>
         </div>
