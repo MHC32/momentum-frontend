@@ -1,57 +1,110 @@
+/**
+ * COMMIT: feat(goals): Create GoalsHierarchy V2 with complete hierarchical navigation
+ * 
+ * Refonte complète de GoalsHierarchy avec :
+ * - LevelTabs (Annual/Quarterly/Monthly/Weekly/Daily)
+ * - Navigation conditionnelle selon le niveau
+ * - Appels aux nouveaux thunks Redux V2
+ * - FocusOfTheDay pour vue daily
+ */
+
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { 
-  getGoals, 
-  setHierarchyLevel, 
+  getAnnualGoals,
+  getQuarterlyGoals,
+  getMonthlyGoals,
+  getWeeklyGoals,
+  getDailyGoals,
+  setHierarchyLevel,
+  setHierarchyQuarter,
+  setHierarchyMonth,
+  setHierarchyWeek,
+  setHierarchyDate,
   setHierarchyCategory,
   clearMessages
 } from '../redux/slices/goalSlice'
 import { useSocket } from '../hooks/useSocket'
 import Sidebar from '../components/Sidebar'
 import LevelTabs from '../components/goals/LevelTabs'
+import QuarterTabs from '../components/goals/QuarterTabs'
+import MonthSelector from '../components/goals/MonthSelector'
+import WeekSelector from '../components/goals/WeekSelector'
+import DateNavigator from '../components/goals/DateNavigator'
+import FocusOfTheDay from '../components/goals/FocusOfTheDay'
+import WeeklyDailyBreakdown from '../components/goals/WeeklyDailyBreakdown'
 import GoalCard from '../components/goals/GoalCard'
 import GoalModal from '../components/GoalModal'
 
 function GoalsHierarchy() {
-  // 🔍 LOG 1: Vérifier que le composant se rend
-  console.log('🏠 [GoalsHierarchy] RENDER');
-  
   const dispatch = useDispatch()
   const { isConnected } = useSocket()
   const [showModal, setShowModal] = useState(false)
   
   const { 
-    hierarchyGoals, 
+    annualGoals,
+    quarterlyGoals,
+    monthlyGoals,
+    weeklyGoals,
+    dailyGoals,
+    focusGoals,
     hierarchyFilters,
+    viewMetadata,
     isLoading,
     error,
     successMessage
   } = useSelector((state) => state.goals)
 
-  // 🔍 LOG 2: Vérifier le state Redux
-  console.log('   hierarchyFilters:', hierarchyFilters);
-  console.log('   hierarchyGoals:', hierarchyGoals);
-  console.log('   hierarchyGoals.length:', hierarchyGoals?.length);
-  console.log('   isLoading:', isLoading);
+  const currentLevel = hierarchyFilters.level
 
-  // Charger les objectifs au montage et quand les filtres changent
+  // Charger les objectifs selon le niveau actif
   useEffect(() => {
-    // 🔍 LOG 3: Vérifier que useEffect se déclenche
-    console.log('🔄 [GoalsHierarchy] useEffect - FETCH GOALS');
-    console.log('   Filters:', {
-      display_in_hierarchy: true,
-      level: hierarchyFilters.level,
-      category: hierarchyFilters.category,
-      year: hierarchyFilters.year
-    });
-    
-    dispatch(getGoals({
-      display_in_hierarchy: true,
-      level: hierarchyFilters.level,
-      category: hierarchyFilters.category,
-      year: hierarchyFilters.year
-    }))
-  }, [dispatch, hierarchyFilters])
+    const filters = {
+      year: hierarchyFilters.year,
+      category: hierarchyFilters.category
+    }
+
+    switch (currentLevel) {
+      case 'annual':
+        dispatch(getAnnualGoals(filters))
+        break
+      case 'quarterly':
+        dispatch(getQuarterlyGoals({ 
+          quarter: hierarchyFilters.quarter || 1, 
+          filters 
+        }))
+        break
+      case 'monthly':
+        dispatch(getMonthlyGoals({ 
+          month: hierarchyFilters.month || 1, 
+          filters 
+        }))
+        break
+      case 'weekly':
+        dispatch(getWeeklyGoals({ 
+          week: hierarchyFilters.week || 1, 
+          filters 
+        }))
+        break
+      case 'daily':
+        dispatch(getDailyGoals({ 
+          ...filters,
+          date: hierarchyFilters.date || new Date().toISOString().split('T')[0]
+        }))
+        break
+      default:
+        break
+    }
+  }, [
+    dispatch, 
+    currentLevel, 
+    hierarchyFilters.year,
+    hierarchyFilters.category,
+    hierarchyFilters.quarter,
+    hierarchyFilters.month,
+    hierarchyFilters.week,
+    hierarchyFilters.date
+  ])
 
   // Clear messages après 3 secondes
   useEffect(() => {
@@ -62,6 +115,20 @@ function GoalsHierarchy() {
       return () => clearTimeout(timer)
     }
   }, [successMessage, error, dispatch])
+
+  // Obtenir les goals du niveau actif
+  const getCurrentGoals = () => {
+    switch (currentLevel) {
+      case 'annual': return annualGoals
+      case 'quarterly': return quarterlyGoals
+      case 'monthly': return monthlyGoals
+      case 'weekly': return weeklyGoals
+      case 'daily': return dailyGoals
+      default: return []
+    }
+  }
+
+  const currentGoals = Array.isArray(getCurrentGoals()) ? getCurrentGoals() : []
 
   // Catégories avec icônes SVG
   const categories = [
@@ -103,32 +170,13 @@ function GoalsHierarchy() {
     }
   ]
 
-  // Grouper les goals par catégorie
-  const safeHierarchyGoals = Array.isArray(hierarchyGoals) ? hierarchyGoals : []
-  
-  // 🔍 LOG 4: Vérifier la protection Array
-  console.log('   safeHierarchyGoals.length:', safeHierarchyGoals.length);
-  console.log('   safeHierarchyGoals:', safeHierarchyGoals);
-  
-  const goalsByCategory = safeHierarchyGoals.reduce((acc, goal) => {
-    if (!acc[goal.category]) {
-      acc[goal.category] = []
-    }
-    acc[goal.category].push(goal)
+  // Grouper par catégorie
+  const goalsByCategory = currentGoals.reduce((acc, goal) => {
+    const cat = goal.category || 'other'
+    if (!acc[cat]) acc[cat] = []
+    acc[cat].push(goal)
     return acc
   }, {})
-  
-  // 🔍 LOG 5: Vérifier le groupement
-  console.log('   goalsByCategory:', goalsByCategory);
-  console.log('   goalsByCategory keys:', Object.keys(goalsByCategory));
-
-  // 🔍 LOG 6: Handler de changement de niveau
-  const handleLevelChange = (level) => {
-    console.log('🔄 [GoalsHierarchy] handleLevelChange');
-    console.log('   New level:', level);
-    console.log('   Old level:', hierarchyFilters.level);
-    dispatch(setHierarchyLevel(level));
-  };
 
   return (
     <div className="flex min-h-screen">
@@ -142,10 +190,10 @@ function GoalsHierarchy() {
               Mes Objectifs {hierarchyFilters.year}
             </h1>
             <p className="text-gray-400">
-              Suivez vos objectifs annuels avec décomposition automatique
+              Transforme tes rêves en actions concrètes
             </p>
             
-            {/* Socket.IO status indicator (dev only) */}
+            {/* Socket.IO status (dev only) */}
             {import.meta.env.DEV && (
               <div className="text-xs mt-2">
                 {isConnected ? (
@@ -157,13 +205,10 @@ function GoalsHierarchy() {
             )}
           </div>
           <button 
-            onClick={() => {
-              console.log('🆕 [GoalsHierarchy] Open modal');
-              setShowModal(true);
-            }} 
+            onClick={() => setShowModal(true)} 
             className="btn-primary"
           >
-            + Créer un objectif
+            + Nouvel objectif
           </button>
         </div>
 
@@ -181,19 +226,61 @@ function GoalsHierarchy() {
 
         {/* Level Tabs */}
         <LevelTabs 
-          currentLevel={hierarchyFilters.level}
-          onLevelChange={handleLevelChange}
+          currentLevel={currentLevel}
+          onLevelChange={(level) => dispatch(setHierarchyLevel(level))}
         />
+
+        {/* Conditional Navigation */}
+        {currentLevel === 'quarterly' && (
+          <QuarterTabs
+            currentQuarter={hierarchyFilters.quarter || 1}
+            onQuarterChange={(q) => dispatch(setHierarchyQuarter(q))}
+            year={hierarchyFilters.year}
+          />
+        )}
+
+        {currentLevel === 'monthly' && (
+          <MonthSelector
+            currentMonth={hierarchyFilters.month || 1}
+            onMonthChange={(m) => dispatch(setHierarchyMonth(m))}
+            year={hierarchyFilters.year}
+          />
+        )}
+
+        {currentLevel === 'weekly' && (
+          <WeekSelector
+            currentWeek={hierarchyFilters.week || 1}
+            onWeekChange={(w) => dispatch(setHierarchyWeek(w))}
+            year={hierarchyFilters.year}
+          />
+        )}
+
+        {currentLevel === 'daily' && (
+          <DateNavigator
+            currentDate={hierarchyFilters.date || new Date().toISOString().split('T')[0]}
+            onDateChange={(d) => dispatch(setHierarchyDate(d))}
+          />
+        )}
+
+        {/* Focus du jour (vue daily uniquement) */}
+        {currentLevel === 'daily' && (
+          <FocusOfTheDay
+            focusGoals={focusGoals}
+            tasks={viewMetadata.daily?.tasks || []}
+            focusMetadata={{
+              completed: viewMetadata.daily?.focusCompleted || 0,
+              total: viewMetadata.daily?.focusTotal || 0,
+              progress: viewMetadata.daily?.focusProgress || 0
+            }}
+          />
+        )}
 
         {/* Category Filters */}
         <div className="mb-6 flex gap-3 overflow-x-auto pb-2">
           {categories.map((cat) => (
             <button
               key={cat.value || 'all'}
-              onClick={() => {
-                console.log('🔄 [GoalsHierarchy] Category change:', cat.value);
-                dispatch(setHierarchyCategory(cat.value));
-              }}
+              onClick={() => dispatch(setHierarchyCategory(cat.value))}
               className={`
                 flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap transition-all font-medium
                 ${hierarchyFilters.category === cat.value
@@ -218,7 +305,7 @@ function GoalsHierarchy() {
         )}
 
         {/* Empty State */}
-        {!isLoading && safeHierarchyGoals.length === 0 && (
+        {!isLoading && currentGoals.length === 0 && (
           <div className="glass-card p-12 text-center">
             <div className="w-24 h-24 mx-auto mb-6 bg-momentum-dark/40 rounded-full flex items-center justify-center">
               <svg className="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -229,7 +316,7 @@ function GoalsHierarchy() {
               Aucun objectif pour ce niveau
             </h3>
             <p className="text-gray-500 mb-4">
-              Créez votre premier objectif annuel avec décomposition automatique
+              Créez votre premier objectif avec décomposition automatique
             </p>
             <button onClick={() => setShowModal(true)} className="btn-primary">
               Créer un objectif
@@ -238,13 +325,10 @@ function GoalsHierarchy() {
         )}
 
         {/* Goals Grid */}
-        {!isLoading && safeHierarchyGoals.length > 0 && (
+        {!isLoading && currentGoals.length > 0 && (
           <div className="space-y-8">
             {Object.entries(goalsByCategory).map(([category, goals]) => {
               const categoryInfo = categories.find(c => c.value === category) || categories[0]
-              
-              // 🔍 LOG 7: Vérifier chaque catégorie rendue
-              console.log('   📂 Rendering category:', category, 'with', goals.length, 'goals');
               
               return (
                 <div key={category} className="space-y-4">
@@ -266,7 +350,18 @@ function GoalsHierarchy() {
                   {/* Goals Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {goals.map((goal) => (
-                      <GoalCard key={goal._id} goal={goal} />
+                      <div key={goal._id}>
+                        <GoalCard goal={goal} level={currentLevel} />
+                        
+                        {/* Weekly Daily Breakdown (vue weekly + objectif numérique) */}
+                        {currentLevel === 'weekly' && goal.type === 'numeric' && (
+                          <WeeklyDailyBreakdown 
+                            goal={goal}
+                            weekStart={viewMetadata.weekly?.weekStart}
+                            weekEnd={viewMetadata.weekly?.weekEnd}
+                          />
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -279,10 +374,7 @@ function GoalsHierarchy() {
       {/* Goal Modal */}
       {showModal && (
         <GoalModal 
-          onClose={() => {
-            console.log('❌ [GoalsHierarchy] Close modal');
-            setShowModal(false);
-          }}
+          onClose={() => setShowModal(false)}
           defaultView="hierarchy"
         />
       )}
