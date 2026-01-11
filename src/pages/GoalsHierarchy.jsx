@@ -13,6 +13,9 @@ import GoalCard from '../components/goals/GoalCard'
 import GoalModal from '../components/GoalModal'
 
 function GoalsHierarchy() {
+  // 🔍 LOG 1: Vérifier que le composant se rend
+  console.log('🏠 [GoalsHierarchy] RENDER');
+  
   const dispatch = useDispatch()
   const { isConnected } = useSocket()
   const [showModal, setShowModal] = useState(false)
@@ -25,8 +28,23 @@ function GoalsHierarchy() {
     successMessage
   } = useSelector((state) => state.goals)
 
+  // 🔍 LOG 2: Vérifier le state Redux
+  console.log('   hierarchyFilters:', hierarchyFilters);
+  console.log('   hierarchyGoals:', hierarchyGoals);
+  console.log('   hierarchyGoals.length:', hierarchyGoals?.length);
+  console.log('   isLoading:', isLoading);
+
   // Charger les objectifs au montage et quand les filtres changent
   useEffect(() => {
+    // 🔍 LOG 3: Vérifier que useEffect se déclenche
+    console.log('🔄 [GoalsHierarchy] useEffect - FETCH GOALS');
+    console.log('   Filters:', {
+      display_in_hierarchy: true,
+      level: hierarchyFilters.level,
+      category: hierarchyFilters.category,
+      year: hierarchyFilters.year
+    });
+    
     dispatch(getGoals({
       display_in_hierarchy: true,
       level: hierarchyFilters.level,
@@ -87,6 +105,11 @@ function GoalsHierarchy() {
 
   // Grouper les goals par catégorie
   const safeHierarchyGoals = Array.isArray(hierarchyGoals) ? hierarchyGoals : []
+  
+  // 🔍 LOG 4: Vérifier la protection Array
+  console.log('   safeHierarchyGoals.length:', safeHierarchyGoals.length);
+  console.log('   safeHierarchyGoals:', safeHierarchyGoals);
+  
   const goalsByCategory = safeHierarchyGoals.reduce((acc, goal) => {
     if (!acc[goal.category]) {
       acc[goal.category] = []
@@ -94,6 +117,18 @@ function GoalsHierarchy() {
     acc[goal.category].push(goal)
     return acc
   }, {})
+  
+  // 🔍 LOG 5: Vérifier le groupement
+  console.log('   goalsByCategory:', goalsByCategory);
+  console.log('   goalsByCategory keys:', Object.keys(goalsByCategory));
+
+  // 🔍 LOG 6: Handler de changement de niveau
+  const handleLevelChange = (level) => {
+    console.log('🔄 [GoalsHierarchy] handleLevelChange');
+    console.log('   New level:', level);
+    console.log('   Old level:', hierarchyFilters.level);
+    dispatch(setHierarchyLevel(level));
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -121,7 +156,13 @@ function GoalsHierarchy() {
               </div>
             )}
           </div>
-          <button onClick={() => setShowModal(true)} className="btn-primary">
+          <button 
+            onClick={() => {
+              console.log('🆕 [GoalsHierarchy] Open modal');
+              setShowModal(true);
+            }} 
+            className="btn-primary"
+          >
             + Créer un objectif
           </button>
         </div>
@@ -141,7 +182,7 @@ function GoalsHierarchy() {
         {/* Level Tabs */}
         <LevelTabs 
           currentLevel={hierarchyFilters.level}
-          onLevelChange={(level) => dispatch(setHierarchyLevel(level))}
+          onLevelChange={handleLevelChange}
         />
 
         {/* Category Filters */}
@@ -149,7 +190,10 @@ function GoalsHierarchy() {
           {categories.map((cat) => (
             <button
               key={cat.value || 'all'}
-              onClick={() => dispatch(setHierarchyCategory(cat.value))}
+              onClick={() => {
+                console.log('🔄 [GoalsHierarchy] Category change:', cat.value);
+                dispatch(setHierarchyCategory(cat.value));
+              }}
               className={`
                 flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap transition-all font-medium
                 ${hierarchyFilters.category === cat.value
@@ -199,6 +243,9 @@ function GoalsHierarchy() {
             {Object.entries(goalsByCategory).map(([category, goals]) => {
               const categoryInfo = categories.find(c => c.value === category) || categories[0]
               
+              // 🔍 LOG 7: Vérifier chaque catégorie rendue
+              console.log('   📂 Rendering category:', category, 'with', goals.length, 'goals');
+              
               return (
                 <div key={category} className="space-y-4">
                   {/* Category Header */}
@@ -232,7 +279,10 @@ function GoalsHierarchy() {
       {/* Goal Modal */}
       {showModal && (
         <GoalModal 
-          onClose={() => setShowModal(false)}
+          onClose={() => {
+            console.log('❌ [GoalsHierarchy] Close modal');
+            setShowModal(false);
+          }}
           defaultView="hierarchy"
         />
       )}

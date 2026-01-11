@@ -1,4 +1,9 @@
 function LevelTabs({ currentLevel, onLevelChange }) {
+  // 🔍 LOG 1: Vérifier que le composant se rend
+  console.log('🎯 [LevelTabs] RENDER');
+  console.log('   currentLevel:', currentLevel);
+  console.log('   onLevelChange:', typeof onLevelChange);
+
   const levels = [
     { 
       value: 'annual', 
@@ -32,56 +37,72 @@ function LevelTabs({ currentLevel, onLevelChange }) {
     }
   ];
 
+  // 🔍 LOG 2: Vérifier les levels
+  console.log('   levels array length:', levels.length);
+
   return (
     <div className="mb-6 overflow-x-auto">
       <div className="flex gap-2 pb-2 min-w-max">
-        {levels.map((level) => (
-          <button
-            key={level.value}
-            onClick={() => onLevelChange(level.value)}
-            className={`
-              group relative flex flex-col items-center gap-2 px-6 py-4 rounded-xl transition-all
-              ${currentLevel === level.value
-                ? 'bg-gradient-to-br from-momentum-light-2/20 to-momentum-accent/20 border-2 border-momentum-light-2/50 shadow-lg'
-                : 'bg-momentum-dark/40 border border-momentum-light-1/10 hover:bg-momentum-accent/10 hover:border-momentum-light-1/20'
-              }
-            `}
-          >
-            {/* Icon SVG */}
-            <svg 
+        {levels.map((level) => {
+          // 🔍 LOG 3: Vérifier chaque level rendu
+          const isActive = currentLevel === level.value;
+          if (isActive) {
+            console.log('   📍 Active level:', level.value);
+          }
+          
+          return (
+            <button
+              key={level.value}
+              onClick={() => {
+                // 🔍 LOG 4: Vérifier les clicks
+                console.log('🖱️ [LevelTabs] CLICK on:', level.value);
+                console.log('   Previous level:', currentLevel);
+                onLevelChange(level.value);
+              }}
               className={`
-                w-6 h-6 transition-transform
-                ${currentLevel === level.value ? 'scale-110 text-momentum-light-2' : 'text-gray-400 group-hover:scale-105 group-hover:text-gray-300'}
+                group relative flex flex-col items-center gap-2 px-6 py-4 rounded-xl transition-all
+                ${currentLevel === level.value
+                  ? 'bg-gradient-to-br from-momentum-light-2/20 to-momentum-accent/20 border-2 border-momentum-light-2/50 shadow-lg'
+                  : 'bg-momentum-dark/40 border border-momentum-light-1/10 hover:bg-momentum-accent/10 hover:border-momentum-light-1/20'
+                }
               `}
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={level.icon} />
-            </svg>
-            
-            {/* Label */}
-            <span className={`
-              text-sm font-semibold
-              ${currentLevel === level.value 
-                ? 'text-momentum-light-2' 
-                : 'text-gray-400 group-hover:text-gray-300'
-              }
-            `}>
-              {level.label}
-            </span>
-
-            {/* Description */}
-            <span className="text-xs text-gray-500">
-              {level.description}
-            </span>
-
-            {/* Active Indicator */}
-            {currentLevel === level.value && (
-              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-1 bg-gradient-to-r from-momentum-light-2 to-momentum-accent rounded-full" />
-            )}
-          </button>
-        ))}
+              {/* Icon SVG */}
+              <svg 
+                className={`
+                  w-6 h-6 transition-transform
+                  ${currentLevel === level.value ? 'scale-110 text-momentum-light-2' : 'text-gray-400 group-hover:scale-105 group-hover:text-gray-300'}
+                `}
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={level.icon} />
+              </svg>
+              
+              {/* Label */}
+              <span className={`
+                text-sm font-semibold
+                ${currentLevel === level.value 
+                  ? 'text-momentum-light-2' 
+                  : 'text-gray-400 group-hover:text-gray-300'
+                }
+              `}>
+                {level.label}
+              </span>
+              
+              {/* Description */}
+              <span className="text-xs text-gray-500">
+                {level.description}
+              </span>
+              
+              {/* Active Indicator */}
+              {currentLevel === level.value && (
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-1 bg-gradient-to-r from-momentum-light-2 to-momentum-accent rounded-full" />
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

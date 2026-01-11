@@ -1,4 +1,5 @@
-import { useState } from 'react'
+/* eslint-disable no-unused-vars */
+import { useState, useEffect } from 'react'
 import { useDispatch } from 'react-redux'
 import { createGoal, updateGoal } from '../redux/slices/goalSlice'
 
@@ -12,7 +13,7 @@ function GoalModal({ goal, onClose, defaultView = 'hierarchy' }) {
     type: goal?.type || 'numeric',
     category: goal?.category || 'personal',
     level: goal?.level || 'annual',
-    priority: goal?.priority || 'normal',
+    priority: goal?.priority || 'medium',
     
     // Display options
     display_in_hierarchy: goal?.display_in_hierarchy ?? (defaultView === 'hierarchy'),
@@ -130,7 +131,11 @@ function GoalModal({ goal, onClose, defaultView = 'hierarchy' }) {
       } else if (formData.type === 'steps') {
         goalData.steps = formData.steps
           .filter(s => s.label.trim())
-          .map(s => ({ label: s.label.trim(), completed: false }))
+          .map((s, index) => ({ 
+            id: `step-${Date.now()}-${index}`,
+            title: s.label.trim(), 
+            completed: false 
+          }))
       }
 
       if (formData.deadline) {
@@ -142,6 +147,10 @@ function GoalModal({ goal, onClose, defaultView = 'hierarchy' }) {
         await dispatch(updateGoal({ goalId: goal._id, goalData })).unwrap()
       } else {
         await dispatch(createGoal(goalData)).unwrap()
+        
+        // ✅ PLUS BESOIN de setHierarchyLevel !
+        // Le goal est déjà ajouté au state par createGoal.fulfilled
+        // Il apparaîtra dans l'onglet actuellement actif
       }
 
       onClose()
@@ -397,8 +406,9 @@ function GoalModal({ goal, onClose, defaultView = 'hierarchy' }) {
                 className="input-field"
               >
                 <option value="low">Basse</option>
-                <option value="normal">Normale</option>
+                <option value="medium">Moyenne</option>
                 <option value="high">Haute</option>
+                <option value="critical">Critique</option>
               </select>
             </div>
             <div>
