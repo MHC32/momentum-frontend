@@ -9,6 +9,7 @@ import Projects from './pages/Projects'
 import Kanban from './pages/Kanban'
 import GoalsHierarchy from './pages/GoalsHierarchy';
 import GoalsChecklist from './pages/GoalsChecklist';
+import PersonalGoals from './pages/PersonalGoals'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -49,7 +50,7 @@ function App() {
       <Route path="/projects" element=<Projects /> replace />
       <Route path="/projects/:projectId/kanban" element=<Kanban /> replace />
       <Route path="/goals-2026" element={<GoalsHierarchy />} />
-      <Route path="/goals-perso" element={<GoalsChecklist />} />
+      <Route path="/goals-perso" element={<PersonalGoals />} />
     </Routes>
   )
 }
