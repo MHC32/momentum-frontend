@@ -115,6 +115,22 @@ function GoalsHierarchy() {
     }
   }
 
+  // ==================== DEBUG LOGS ====================
+  useEffect(() => {
+    // Log pour debugger les données weekly
+    if (level === 'weekly' && weeklyGoals.length > 0) {
+      console.log('🔍 DEBUG Weekly Goals Data:')
+      weeklyGoals.forEach((goal, index) => {
+        console.log(`Goal ${index + 1}: ${goal.title}`)
+        console.log('Daily Data:', goal.dailyData)
+        if (goal.dailyData && goal.dailyData.length > 7) {
+          console.warn(`⚠️ Goal "${goal.title}" a ${goal.dailyData.length} jours (devrait être 7)`)
+          console.log('Contenu dupliqué? Voici les jours:', goal.dailyData.map(d => d.day))
+        }
+      })
+    }
+  }, [weeklyGoals, level])
+
   // ==================== HANDLERS ====================
 
   const handleCreateGoal = () => {
@@ -212,6 +228,66 @@ function GoalsHierarchy() {
     setWeek(newWeek)
   }
 
+  // ==================== UTILITY FUNCTIONS ====================
+
+  const calculateDaysRemaining = (deadline) => {
+    if (!deadline) return null
+    const today = new Date()
+    const deadlineDate = new Date(deadline)
+    const diff = deadlineDate - today
+    return Math.ceil(diff / (1000 * 60 * 60 * 24))
+  }
+
+  // Fonction pour éviter les doublons entre dailyGoals et focusGoals
+  const getUniqueDailyGoals = () => {
+    const allGoals = [...dailyGoals, ...focusGoals]
+    
+    // Utiliser un Map pour éliminer les doublons par _id
+    const uniqueGoalsMap = new Map()
+    
+    allGoals.forEach(goal => {
+      if (!uniqueGoalsMap.has(goal._id)) {
+        uniqueGoalsMap.set(goal._id, goal)
+      }
+    })
+    
+    return Array.from(uniqueGoalsMap.values())
+  }
+
+  // Fonction pour nettoyer les données dailyData (éviter les doublons)
+  const cleanDailyData = (dailyData) => {
+    if (!dailyData || !Array.isArray(dailyData)) return []
+    
+    // Si plus de 7 jours, prendre seulement les 7 premiers
+    if (dailyData.length > 7) {
+      console.warn(`⚠️ Nettoyage dailyData: ${dailyData.length} -> 7 jours`)
+      return dailyData.slice(0, 7)
+    }
+    
+    return dailyData
+  }
+
+  // Fonction pour extraire les jours uniques (par nom de jour)
+  const getUniqueDays = (dailyData) => {
+    if (!dailyData || !Array.isArray(dailyData)) return []
+    
+    const uniqueDays = []
+    const seenDays = new Set()
+    
+    dailyData.forEach(day => {
+      if (!seenDays.has(day.day)) {
+        seenDays.add(day.day)
+        uniqueDays.push(day)
+      }
+    })
+    
+    if (uniqueDays.length < dailyData.length) {
+      console.warn(`⚠️ Doublons détectés: ${dailyData.length} -> ${uniqueDays.length} jours uniques`)
+    }
+    
+    return uniqueDays.slice(0, 7) // Toujours limiter à 7 jours
+  }
+
   // ==================== RENDER HELPERS ====================
 
   const renderGoalCard = (goal) => {
@@ -300,14 +376,6 @@ function GoalsHierarchy() {
         onMenuClick={() => handleMenuClick(goal._id)}
       />
     )
-  }
-
-  const calculateDaysRemaining = (deadline) => {
-    if (!deadline) return null
-    const today = new Date()
-    const deadlineDate = new Date(deadline)
-    const diff = deadlineDate - today
-    return Math.ceil(diff / (1000 * 60 * 60 * 24))
   }
 
   // ==================== RENDER ====================
@@ -503,19 +571,24 @@ function GoalsHierarchy() {
                       <p>Les objectifs apparaîtront ici après décomposition automatique</p>
                     </div>
                   ) : (
-                    weeklyGoals.map((goal) => (
-                      <WeeklyGoalCard 
-                        key={goal._id}
-                        goal={{
-                          id: goal._id,
-                          title: goal.title,
-                          currentWeekValue: goal.current_value,
-                          weekTarget: goal.target_value,
-                          dailyData: goal.dailyData || goal._doc?.dailyData || []
-                        }}
-                        onMenuClick={() => handleMenuClick(goal._id)}
-                      />
-                    ))
+                    weeklyGoals.map((goal) => {
+                      // Nettoyer les données dailyData pour éviter les doublons
+                      const cleanedDailyData = cleanDailyData(goal.dailyData || goal._doc?.dailyData || [])
+                      
+                      return (
+                        <WeeklyGoalCard 
+                          key={goal._id}
+                          goal={{
+                            id: goal._id,
+                            title: goal.title,
+                            currentWeekValue: goal.current_value,
+                            weekTarget: goal.target_value,
+                            dailyData: cleanedDailyData
+                          }}
+                          onMenuClick={() => handleMenuClick(goal._id)}
+                        />
+                      )
+                    })
                   )}
                 </div>
               )}
@@ -536,16 +609,16 @@ function GoalsHierarchy() {
                     />
                   )}
 
-                  {/* Daily Checklist */}
+                  {/* Daily Checklist - Éviter les doublons */}
                   <div className="space-y-3">
-                    {[...dailyGoals, ...focusGoals].length === 0 ? (
+                    {getUniqueDailyGoals().length === 0 ? (
                       <div className="text-center py-20" style={{ color: '#8BA3B8' }}>
                         <div className="text-6xl mb-4">✅</div>
                         <p className="text-xl mb-2">Aucun objectif pour aujourd'hui</p>
                         <p>Profite de ta journée libre ! 🎉</p>
                       </div>
                     ) : (
-                      [...dailyGoals, ...focusGoals].map((goal) => (
+                      getUniqueDailyGoals().map((goal) => (
                         <DailyChecklistItem 
                           key={goal._id}
                           item={{
