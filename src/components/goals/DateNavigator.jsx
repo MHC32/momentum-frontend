@@ -1,97 +1,139 @@
 /**
- * COMMIT: feat(goals): Add DateNavigator component for daily navigation
+ * DateNavigator - Design EXACT du wireframe (AVEC ICÔNES SVG)
  * 
- * Ajoute le composant DateNavigator avec flèches et affichage de la date formatée
+ * WIREFRAME SPECS (observé dans Images 4 et 6):
+ * - 3 éléments: Flèche gauche + Texte + Flèche droite
+ * - Format Monthly: "Janvier 2026"
+ * - Format Daily: "Samedi 3 Janvier 2026"
+ * - Boutons: background dark + border
+ * - Texte: centré, grand, blanc
  */
 
-function DateNavigator({ currentDate, onDateChange }) {
+function DateNavigator({ currentDate, onDateChange, displayFormat = 'month' }) {
+  // Parser la date
   const date = new Date(currentDate)
-
-  const formatDate = (date) => {
-    return date.toLocaleDateString('fr-FR', { 
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
+  
+  // Formater selon le type
+  const getDisplayText = () => {
+    if (displayFormat === 'month') {
+      const monthNames = [
+        'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+      ]
+      return `${monthNames[date.getMonth()]} ${date.getFullYear()}`
+    } else {
+      // Daily format
+      const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
+      const monthNames = [
+        'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+      ]
+      return `${dayNames[date.getDay()]} ${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`
+    }
   }
 
+  // Gérer la navigation
   const handlePrevious = () => {
     const newDate = new Date(date)
-    newDate.setDate(date.getDate() - 1)
+    if (displayFormat === 'month') {
+      newDate.setMonth(newDate.getMonth() - 1)
+    } else {
+      newDate.setDate(newDate.getDate() - 1)
+    }
     onDateChange(newDate.toISOString().split('T')[0])
   }
 
   const handleNext = () => {
     const newDate = new Date(date)
-    newDate.setDate(date.getDate() + 1)
+    if (displayFormat === 'month') {
+      newDate.setMonth(newDate.getMonth() + 1)
+    } else {
+      newDate.setDate(newDate.getDate() + 1)
+    }
     onDateChange(newDate.toISOString().split('T')[0])
-  }
-
-  const handleToday = () => {
-    const today = new Date()
-    onDateChange(today.toISOString().split('T')[0])
-  }
-
-  const isToday = () => {
-    const today = new Date()
-    return date.toDateString() === today.toDateString()
   }
 
   return (
     <div className="mb-6 flex items-center justify-center gap-4">
-      {/* Previous Button */}
+      {/* Bouton Précédent */}
       <button
         onClick={handlePrevious}
-        className="p-3 rounded-xl bg-momentum-dark/40 border border-momentum-light-1/10 hover:bg-momentum-accent/10 transition-all group"
+        className="p-3 rounded-xl transition-all"
+        style={{
+          background: 'rgba(0, 29, 57, 0.3)',
+          border: '1px solid rgba(110, 162, 179, 0.15)',
+          color: '#8BA3B8'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(0, 29, 57, 0.5)'
+          e.currentTarget.style.color = '#7BBDE8'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(0, 29, 57, 0.3)'
+          e.currentTarget.style.color = '#8BA3B8'
+        }}
       >
         <svg 
-          className="w-5 h-5 text-gray-400 group-hover:text-momentum-light-2 transition-colors" 
+          className="w-5 h-5" 
           fill="none" 
           stroke="currentColor" 
           viewBox="0 0 24 24"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth="2" 
+            d="M15 19l-7-7 7-7" 
+          />
         </svg>
       </button>
 
-      {/* Date Info */}
-      <div className="flex-1 max-w-2xl glass-card p-4 text-center">
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <svg className="w-6 h-6 text-momentum-light-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-          <h3 className="text-2xl font-bold text-momentum-light-2 capitalize">
-            {formatDate(date)}
-          </h3>
-        </div>
-        
-        {/* Today Button */}
-        {!isToday() && (
-          <button
-            onClick={handleToday}
-            className="text-xs text-momentum-accent hover:text-momentum-light-2 transition-colors flex items-center gap-1 mx-auto"
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Aujourd'hui
-          </button>
-        )}
+      {/* Texte central */}
+      <div 
+        className="flex-1 max-w-md text-center px-4 py-3 rounded-xl"
+        style={{
+          background: 'rgba(0, 29, 57, 0.3)',
+          border: '1px solid rgba(110, 162, 179, 0.15)'
+        }}
+      >
+        <h3 
+          className="text-2xl font-bold"
+          style={{ color: '#E8F1F5' }}
+        >
+          {getDisplayText()}
+        </h3>
       </div>
 
-      {/* Next Button */}
+      {/* Bouton Suivant */}
       <button
         onClick={handleNext}
-        className="p-3 rounded-xl bg-momentum-dark/40 border border-momentum-light-1/10 hover:bg-momentum-accent/10 transition-all group"
+        className="p-3 rounded-xl transition-all"
+        style={{
+          background: 'rgba(0, 29, 57, 0.3)',
+          border: '1px solid rgba(110, 162, 179, 0.15)',
+          color: '#8BA3B8'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(0, 29, 57, 0.5)'
+          e.currentTarget.style.color = '#7BBDE8'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(0, 29, 57, 0.3)'
+          e.currentTarget.style.color = '#8BA3B8'
+        }}
       >
         <svg 
-          className="w-5 h-5 text-gray-400 group-hover:text-momentum-light-2 transition-colors" 
+          className="w-5 h-5" 
           fill="none" 
           stroke="currentColor" 
           viewBox="0 0 24 24"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth="2" 
+            d="M9 5l7 7-7 7" 
+          />
         </svg>
       </button>
     </div>

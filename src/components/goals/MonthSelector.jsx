@@ -1,8 +1,14 @@
-/* eslint-disable no-unused-vars */
 /**
- * COMMIT: feat(goals): Add MonthSelector component for monthly navigation
+ * MonthSelector - Design EXACT du wireframe
  * 
- * Ajoute le composant MonthSelector avec 12 boutons Jan-Déc pour la vue mensuelle
+ * WIREFRAME SPECS:
+ * - 12 boutons Jan-Déc
+ * - Active : gradient background + border + shadow
+ * - Inactive : dark background + border muted
+ * - Icon calendrier SVG
+ * - Label mois (court)
+ * - Active indicator (barre en bas)
+ * - Scroll horizontal sur mobile
  */
 
 function MonthSelector({ currentMonth, onMonthChange, year }) {
@@ -35,8 +41,8 @@ function MonthSelector({ currentMonth, onMonthChange, year }) {
               className={`
                 group relative px-4 py-3 rounded-xl transition-all min-w-[70px]
                 ${isActive
-                  ? 'bg-gradient-to-br from-momentum-light-2/20 to-momentum-accent/20 border-2 border-momentum-light-2/50 shadow-lg'
-                  : 'bg-momentum-dark/40 border border-momentum-light-1/10 hover:bg-momentum-accent/10 hover:border-momentum-light-1/20'
+                  ? 'bg-gradient-to-br from-[rgba(123,189,232,0.2)] to-[rgba(78,142,162,0.2)] border-2 border-[rgba(123,189,232,0.5)] shadow-lg'
+                  : 'bg-[rgba(0,29,57,0.4)] border border-[rgba(110,162,179,0.1)] hover:bg-[rgba(78,142,162,0.1)] hover:border-[rgba(110,162,179,0.2)]'
                 }
               `}
             >
@@ -44,7 +50,7 @@ function MonthSelector({ currentMonth, onMonthChange, year }) {
               <svg 
                 className={`
                   w-5 h-5 mx-auto mb-1 transition-transform
-                  ${isActive ? 'scale-110 text-momentum-light-2' : 'text-gray-400 group-hover:scale-105 group-hover:text-gray-300'}
+                  ${isActive ? 'scale-110 text-[#7BBDE8]' : 'text-[#8BA3B8] group-hover:scale-105 group-hover:text-gray-300'}
                 `}
                 fill="none" 
                 stroke="currentColor" 
@@ -57,8 +63,8 @@ function MonthSelector({ currentMonth, onMonthChange, year }) {
               <span className={`
                 block text-sm font-semibold
                 ${isActive 
-                  ? 'text-momentum-light-2' 
-                  : 'text-gray-400 group-hover:text-gray-300'
+                  ? 'text-[#7BBDE8]' 
+                  : 'text-[#8BA3B8] group-hover:text-gray-300'
                 }
               `}>
                 {month.label}
@@ -66,7 +72,7 @@ function MonthSelector({ currentMonth, onMonthChange, year }) {
               
               {/* Active Indicator */}
               {isActive && (
-                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-momentum-light-2 to-momentum-accent rounded-full" />
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-[#7BBDE8] to-[#4E8EA2] rounded-full" />
               )}
             </button>
           )

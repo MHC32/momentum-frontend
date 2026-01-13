@@ -1,383 +1,373 @@
 /**
- * COMMIT: feat(goals): Create GoalsHierarchy V2 with complete hierarchical navigation
+ * GoalsHierarchy - PAGE PRINCIPALE DES OBJECTIFS
  * 
- * Refonte complète de GoalsHierarchy avec :
- * - LevelTabs (Annual/Quarterly/Monthly/Weekly/Daily)
- * - Navigation conditionnelle selon le niveau
- * - Appels aux nouveaux thunks Redux V2
- * - FocusOfTheDay pour vue daily
+ * WIREFRAME SPECS:
+ * - Assemble tous les 21 composants créés
+ * - Gère le routing entre 5 vues: Annual, Quarterly, Monthly, Weekly, Daily
+ * - Gère l'état global: level, quarter, date, week
+ * - Affichage conditionnel selon le level actif
  */
 
-import { useEffect, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { 
-  getAnnualGoals,
-  getQuarterlyGoals,
-  getMonthlyGoals,
-  getWeeklyGoals,
-  getDailyGoals,
-  setHierarchyLevel,
-  setHierarchyQuarter,
-  setHierarchyMonth,
-  setHierarchyWeek,
-  setHierarchyDate,
-  setHierarchyCategory,
-  clearMessages
-} from '../redux/slices/goalSlice'
-import { useSocket } from '../hooks/useSocket'
-import Sidebar from '../components/Sidebar'
+import { useState } from 'react'
+import PageHeader from '../components/goals/PageHeader'
 import LevelTabs from '../components/goals/LevelTabs'
-import QuarterTabs from '../components/goals/QuarterTabs'
-import MonthSelector from '../components/goals/MonthSelector'
-import WeekSelector from '../components/goals/WeekSelector'
+import QuarterSelector from '../components/goals/QuarterSelector'
 import DateNavigator from '../components/goals/DateNavigator'
-import FocusOfTheDay from '../components/goals/FocusOfTheDay'
-import WeeklyDailyBreakdown from '../components/goals/WeeklyDailyBreakdown'
-import GoalCard from '../components/goals/GoalCard'
-import GoalModal from '../components/GoalModal'
+import WeekSelector from '../components/goals/WeekSelector'
+import GoalsGrid from '../components/goals/GoalsGrid'
+import GoalCardAnnual from '../components/goals/GoalCardAnnual'
+import GoalCardLearning from '../components/goals/GoalCardLearning'
+import GoalCardChecklist from '../components/goals/GoalCardChecklist'
+import GoalCardWithTracker from '../components/goals/GoalCardWithTracker'
+import GoalCardQuarterly from '../components/goals/GoalCardQuarterly'
+import GoalCardMonthly from '../components/goals/GoalCardMonthly'
+import WeeklyGoalCard from '../components/goals/WeeklyGoalCard'
+import FocusWidget from '../components/goals/FocusWidget'
+import DailyChecklistItem from '../components/goals/DailyChecklistItem'
+
 
 function GoalsHierarchy() {
-  const dispatch = useDispatch()
-  const { isConnected } = useSocket()
-  const [showModal, setShowModal] = useState(false)
-  
-  const { 
-    annualGoals,
-    quarterlyGoals,
-    monthlyGoals,
-    weeklyGoals,
-    dailyGoals,
-    focusGoals,
-    hierarchyFilters,
-    viewMetadata,
-    isLoading,
-    error,
-    successMessage
-  } = useSelector((state) => state.goals)
+  // État global
+  const [level, setLevel] = useState('annual')
+  const [quarter, setQuarter] = useState(1)
+  const [date, setDate] = useState('2026-01-03')
+  const [week, setWeek] = useState(1)
 
-  const currentLevel = hierarchyFilters.level
-
-  // Charger les objectifs selon le niveau actif
-  useEffect(() => {
-    const filters = {
-      year: hierarchyFilters.year,
-      category: hierarchyFilters.category
-    }
-
-    switch (currentLevel) {
-      case 'annual':
-        dispatch(getAnnualGoals(filters))
-        break
-      case 'quarterly':
-        dispatch(getQuarterlyGoals({ 
-          quarter: hierarchyFilters.quarter || 1, 
-          filters 
-        }))
-        break
-      case 'monthly':
-        dispatch(getMonthlyGoals({ 
-          month: hierarchyFilters.month || 1, 
-          filters 
-        }))
-        break
-      case 'weekly':
-        dispatch(getWeeklyGoals({ 
-          week: hierarchyFilters.week || 1, 
-          filters 
-        }))
-        break
-      case 'daily':
-        dispatch(getDailyGoals({ 
-          ...filters,
-          date: hierarchyFilters.date || new Date().toISOString().split('T')[0]
-        }))
-        break
-      default:
-        break
-    }
-  }, [
-    dispatch, 
-    currentLevel, 
-    hierarchyFilters.year,
-    hierarchyFilters.category,
-    hierarchyFilters.quarter,
-    hierarchyFilters.month,
-    hierarchyFilters.week,
-    hierarchyFilters.date
-  ])
-
-  // Clear messages après 3 secondes
-  useEffect(() => {
-    if (successMessage || error) {
-      const timer = setTimeout(() => {
-        dispatch(clearMessages())
-      }, 3000)
-      return () => clearTimeout(timer)
-    }
-  }, [successMessage, error, dispatch])
-
-  // Obtenir les goals du niveau actif
-  const getCurrentGoals = () => {
-    switch (currentLevel) {
-      case 'annual': return annualGoals
-      case 'quarterly': return quarterlyGoals
-      case 'monthly': return monthlyGoals
-      case 'weekly': return weeklyGoals
-      case 'daily': return dailyGoals
-      default: return []
-    }
-  }
-
-  const currentGoals = Array.isArray(getCurrentGoals()) ? getCurrentGoals() : []
-
-  // Catégories avec icônes SVG
-  const categories = [
-    { 
-      value: null, 
-      label: 'Tous', 
-      color: 'from-blue-500 to-purple-500',
-      icon: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z'
+  // Mock data - ANNUAL
+  const annualGoals = [
+    {
+      id: '1',
+      title: 'Économiser 700 000 HTG',
+      category: 'financial',
+      currentValue: 105000,
+      targetValue: 700000,
+      unit: 'HTG',
+      progress: 15,
+      status: 'on-track',
+      deadline: '2026-12-31',
+      daysRemaining: 362,
+      perMonth: 58333,
+      perDay: null,
+      showGrid: true,
+      hasTracker: false
     },
-    { 
-      value: 'financial', 
-      label: 'Financier', 
-      color: 'from-green-500 to-emerald-500',
-      icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+    {
+      id: '2',
+      title: '4000 commits GitHub',
+      category: 'professional',
+      currentValue: 1247,
+      targetValue: 4000,
+      unit: 'commits',
+      progress: 31.2,
+      status: 'on-track',
+      deadline: '2026-12-31',
+      daysRemaining: 362,
+      perMonth: null,
+      perDay: 11,
+      showGrid: true
     },
-    { 
-      value: 'professional', 
-      label: 'Professionnel', 
-      color: 'from-blue-500 to-cyan-500',
-      icon: 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'
+    {
+      id: '3',
+      title: 'Lire 12 livres',
+      category: 'learning',
+      currentValue: 1,
+      targetValue: 12,
+      unit: 'livres',
+      progress: 8.3,
+      status: 'at-risk',
+      currentBook: {
+        title: 'Atomic Habits',
+        progress: 41
+      }
     },
-    { 
-      value: 'learning', 
-      label: 'Apprentissage', 
-      color: 'from-purple-500 to-pink-500',
-      icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'
-    },
-    { 
-      value: 'personal', 
-      label: 'Personnel', 
-      color: 'from-orange-500 to-red-500',
-      icon: 'M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z'
-    },
-    { 
-      value: 'health', 
-      label: 'Santé', 
-      color: 'from-red-500 to-pink-500',
-      icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z'
+    {
+      id: '4',
+      title: 'Lancer carrière freelance',
+      category: 'professional',
+      steps: [
+        { id: '1', title: 'Portfolio en ligne', completed: true },
+        { id: '2', title: 'Obtenir 3 clients', completed: false, subtitle: '0/3 clients' },
+        { id: '3', title: 'Profil Upwork optimisé', completed: false }
+      ]
     }
   ]
 
-  // Grouper par catégorie
-  const goalsByCategory = currentGoals.reduce((acc, goal) => {
-    const cat = goal.category || 'other'
-    if (!acc[cat]) acc[cat] = []
-    acc[cat].push(goal)
-    return acc
-  }, {})
+  // Mock data - QUARTERLY
+  const quarterlyGoals = [
+    {
+      id: '1',
+      title: 'Économiser 175 000 HTG',
+      category: 'financial',
+      hierarchyContext: 'Q1 - 25% de 700k annuel',
+      currentValue: 32000,
+      targetValue: 175000,
+      unit: 'HTG',
+      progress: 18,
+      status: 'on-track',
+      deadline: '2026-03-31'
+    },
+    {
+      id: '2',
+      title: '1000 commits GitHub',
+      category: 'professional',
+      hierarchyContext: 'Q1 - 25% de 4000 annuel',
+      currentValue: 245,
+      targetValue: 1000,
+      unit: 'commits',
+      progress: 24.5,
+      status: 'on-track',
+      deadline: '2026-03-31'
+    }
+  ]
+
+  // Mock data - MONTHLY
+  const monthlyGoals = [
+    {
+      id: '1',
+      title: '333 commits GitHub',
+      category: 'professional',
+      hierarchyContext: '4000 commits annuels',
+      currentValue: 83,
+      targetValue: 333,
+      unit: 'commits',
+      progress: 25,
+      status: 'on-track',
+      linkedTasks: [
+        { id: '1', name: 'Momentum module Goals' },
+        { id: '2', name: 'FinApp module Comptes' },
+        { id: '3', name: '+3 autres' }
+      ]
+    },
+    {
+      id: '2',
+      title: 'Économiser 58 333 HTG',
+      category: 'financial',
+      hierarchyContext: '700 000 HTG annuels',
+      currentValue: 15000,
+      targetValue: 58333,
+      unit: 'HTG',
+      progress: 26,
+      status: 'on-track',
+      linkedTasks: [
+        { id: '4', name: 'Budget mensuel' },
+        { id: '5', name: 'Suivi dépenses' }
+      ]
+    }
+  ]
+
+  // Mock data - WEEKLY
+  const weeklyGoals = [
+    {
+      id: '1',
+      title: '83 commits GitHub',
+      currentWeekValue: 21,
+      weekTarget: 83,
+      dailyData: [
+        { day: 'Lun', value: 14, isCompleted: true, isToday: false },
+        { day: 'Mar', value: 7, isCompleted: true, isToday: false },
+        { day: 'Mer', value: 0, isCompleted: false, isToday: true },
+        { day: 'Jeu', value: null, isCompleted: false, isToday: false },
+        { day: 'Ven', value: null, isCompleted: false, isToday: false },
+        { day: 'Sam', value: null, isCompleted: false, isToday: false },
+        { day: 'Dim', value: null, isCompleted: false, isToday: false }
+      ]
+    }
+  ]
+
+  // Mock data - DAILY
+  const dailyFocus = {
+    description: 'Avancer sur le module Goals de Momentum et compléter la configuration de FinApp',
+    completedCount: 2,
+    totalCount: 4,
+    percentage: 50
+  }
+
+  const dailyGoals = [
+    {
+      id: '1',
+      title: '333 commits GitHub',
+      isCompleted: true
+    },
+    {
+      id: '2',
+      title: 'Terminer module Goals',
+      isCompleted: false,
+      kanbanLink: true
+    },
+    {
+      id: '3',
+      title: 'Lire Atomic Habits',
+      isCompleted: false,
+      progress: { current: 1, total: 3 }
+    },
+    {
+      id: '4',
+      title: 'Économiser 2000 HTG',
+      isCompleted: false
+    }
+  ]
+
+  // Handlers
+  const handleCreateGoal = () => {
+    console.log('Create new goal')
+  }
+
+  const handleMenuClick = (goalId) => {
+    console.log('Menu clicked for goal:', goalId)
+  }
+
+  const handleStepToggle = (goalId, stepId) => {
+    console.log('Toggle step:', stepId, 'in goal:', goalId)
+  }
+
+  const handleTaskClick = (taskId) => {
+    console.log('Task clicked:', taskId)
+  }
+
+  const handleDailyToggle = (goalId) => {
+    console.log('Toggle daily goal:', goalId)
+  }
+
+  const handleKanbanClick = (goalId) => {
+    console.log('Open Kanban for goal:', goalId)
+  }
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
-      
-      <main className="flex-1 p-8 overflow-y-auto">
+    <div className="min-h-screen p-8" style={{ background: '#001D39' }}>
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-start mb-8 flex-wrap gap-4">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">
-              Mes Objectifs {hierarchyFilters.year}
-            </h1>
-            <p className="text-gray-400">
-              Transforme tes rêves en actions concrètes
-            </p>
-            
-            {/* Socket.IO status (dev only) */}
-            {import.meta.env.DEV && (
-              <div className="text-xs mt-2">
-                {isConnected ? (
-                  <span className="text-green-400">🟢 Socket connecté</span>
-                ) : (
-                  <span className="text-red-400">🔴 Socket déconnecté</span>
-                )}
-              </div>
-            )}
-          </div>
-          <button 
-            onClick={() => setShowModal(true)} 
-            className="btn-primary"
-          >
-            + Nouvel objectif
-          </button>
-        </div>
+        <PageHeader 
+          title="Mes Objectifs 2026"
+          subtitle="Transforme tes rêves en actions concrètes"
+          buttonText="+ Nouvel objectif"
+          onButtonClick={handleCreateGoal}
+        />
 
-        {/* Messages */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400">
-            {error}
-          </div>
-        )}
-        {successMessage && (
-          <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400">
-            {successMessage}
-          </div>
-        )}
-
-        {/* Level Tabs */}
+        {/* Navigation principale */}
         <LevelTabs 
-          currentLevel={currentLevel}
-          onLevelChange={(level) => dispatch(setHierarchyLevel(level))}
+          currentLevel={level}
+          onLevelChange={setLevel}
         />
 
-        {/* Conditional Navigation */}
-        {currentLevel === 'quarterly' && (
-          <QuarterTabs
-            currentQuarter={hierarchyFilters.quarter || 1}
-            onQuarterChange={(q) => dispatch(setHierarchyQuarter(q))}
-            year={hierarchyFilters.year}
+        {/* Sub-navigation conditionnelle */}
+        {level === 'quarterly' && (
+          <QuarterSelector 
+            currentQuarter={quarter}
+            onQuarterChange={setQuarter}
+            year={2026}
           />
         )}
 
-        {currentLevel === 'monthly' && (
-          <MonthSelector
-            currentMonth={hierarchyFilters.month || 1}
-            onMonthChange={(m) => dispatch(setHierarchyMonth(m))}
-            year={hierarchyFilters.year}
+        {level === 'monthly' && (
+          <DateNavigator 
+            currentDate={date}
+            onDateChange={setDate}
+            displayFormat="month"
           />
         )}
 
-        {currentLevel === 'weekly' && (
-          <WeekSelector
-            currentWeek={hierarchyFilters.week || 1}
-            onWeekChange={(w) => dispatch(setHierarchyWeek(w))}
-            year={hierarchyFilters.year}
+        {level === 'weekly' && (
+          <WeekSelector 
+            currentWeek={week}
+            onWeekChange={setWeek}
+            year={2026}
           />
         )}
 
-        {currentLevel === 'daily' && (
-          <DateNavigator
-            currentDate={hierarchyFilters.date || new Date().toISOString().split('T')[0]}
-            onDateChange={(d) => dispatch(setHierarchyDate(d))}
+        {level === 'daily' && (
+          <DateNavigator 
+            currentDate={date}
+            onDateChange={setDate}
+            displayFormat="day"
           />
         )}
 
-        {/* Focus du jour (vue daily uniquement) */}
-        {currentLevel === 'daily' && (
-          <FocusOfTheDay
-            focusGoals={focusGoals}
-            tasks={viewMetadata.daily?.tasks || []}
-            focusMetadata={{
-              completed: viewMetadata.daily?.focusCompleted || 0,
-              total: viewMetadata.daily?.focusTotal || 0,
-              progress: viewMetadata.daily?.focusProgress || 0
-            }}
-          />
+        {/* Contenu conditionnel selon le level */}
+        {level === 'annual' && (
+          <GoalsGrid columns={2}>
+            {/* Financial Goal */}
+            <GoalCardAnnual 
+              goal={annualGoals[0]}
+              onMenuClick={() => handleMenuClick(annualGoals[0].id)}
+            />
+
+            {/* Commits Goal with Tracker */}
+            <GoalCardWithTracker 
+              goal={annualGoals[1]}
+              onMenuClick={() => handleMenuClick(annualGoals[1].id)}
+            />
+
+            {/* Learning Goal */}
+            <GoalCardLearning 
+              goal={annualGoals[2]}
+              onMenuClick={() => handleMenuClick(annualGoals[2].id)}
+            />
+
+            {/* Checklist Goal */}
+            <GoalCardChecklist 
+              goal={annualGoals[3]}
+              onStepToggle={(stepId) => handleStepToggle(annualGoals[3].id, stepId)}
+              onMenuClick={() => handleMenuClick(annualGoals[3].id)}
+            />
+          </GoalsGrid>
         )}
 
-        {/* Category Filters */}
-        <div className="mb-6 flex gap-3 overflow-x-auto pb-2">
-          {categories.map((cat) => (
-            <button
-              key={cat.value || 'all'}
-              onClick={() => dispatch(setHierarchyCategory(cat.value))}
-              className={`
-                flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap transition-all font-medium
-                ${hierarchyFilters.category === cat.value
-                  ? `bg-gradient-to-r ${cat.color} text-white shadow-lg`
-                  : 'bg-momentum-dark/30 text-gray-300 hover:bg-momentum-dark/50 border border-momentum-light-1/20'
-                }
-              `}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={cat.icon} />
-              </svg>
-              <span>{cat.label}</span>
-            </button>
-          ))}
-        </div>
+        {level === 'quarterly' && (
+          <GoalsGrid columns={2}>
+            {quarterlyGoals.map((goal) => (
+              <GoalCardQuarterly 
+                key={goal.id}
+                goal={goal}
+                onMenuClick={() => handleMenuClick(goal.id)}
+              />
+            ))}
+          </GoalsGrid>
+        )}
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-momentum-light-2"></div>
+        {level === 'monthly' && (
+          <GoalsGrid columns={2}>
+            {monthlyGoals.map((goal) => (
+              <GoalCardMonthly 
+                key={goal.id}
+                goal={goal}
+                onMenuClick={() => handleMenuClick(goal.id)}
+                onTaskClick={handleTaskClick}
+              />
+            ))}
+          </GoalsGrid>
+        )}
+
+        {level === 'weekly' && (
+          <div className="space-y-4">
+            {weeklyGoals.map((goal) => (
+              <WeeklyGoalCard 
+                key={goal.id}
+                goal={goal}
+                onMenuClick={() => handleMenuClick(goal.id)}
+              />
+            ))}
           </div>
         )}
 
-        {/* Empty State */}
-        {!isLoading && currentGoals.length === 0 && (
-          <div className="glass-card p-12 text-center">
-            <div className="w-24 h-24 mx-auto mb-6 bg-momentum-dark/40 rounded-full flex items-center justify-center">
-              <svg className="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-              </svg>
+        {level === 'daily' && (
+          <>
+            {/* Focus Widget */}
+            <FocusWidget focus={dailyFocus} />
+
+            {/* Daily Checklist */}
+            <div className="space-y-3">
+              {dailyGoals.map((goal) => (
+                <DailyChecklistItem 
+                  key={goal.id}
+                  item={goal}
+                  onToggle={handleDailyToggle}
+                  onLinkClick={handleKanbanClick}
+                />
+              ))}
             </div>
-            <h3 className="text-xl font-semibold mb-2">
-              Aucun objectif pour ce niveau
-            </h3>
-            <p className="text-gray-500 mb-4">
-              Créez votre premier objectif avec décomposition automatique
-            </p>
-            <button onClick={() => setShowModal(true)} className="btn-primary">
-              Créer un objectif
-            </button>
-          </div>
+          </>
         )}
-
-        {/* Goals Grid */}
-        {!isLoading && currentGoals.length > 0 && (
-          <div className="space-y-8">
-            {Object.entries(goalsByCategory).map(([category, goals]) => {
-              const categoryInfo = categories.find(c => c.value === category) || categories[0]
-              
-              return (
-                <div key={category} className="space-y-4">
-                  {/* Category Header */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 flex items-center justify-center">
-                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={categoryInfo.icon} />
-                      </svg>
-                    </div>
-                    <h2 className="text-xl font-semibold">
-                      {categoryInfo.label}
-                    </h2>
-                    <span className="text-sm text-gray-500">
-                      ({goals.length} objectif{goals.length > 1 ? 's' : ''})
-                    </span>
-                  </div>
-
-                  {/* Goals Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {goals.map((goal) => (
-                      <div key={goal._id}>
-                        <GoalCard goal={goal} level={currentLevel} />
-                        
-                        {/* Weekly Daily Breakdown (vue weekly + objectif numérique) */}
-                        {currentLevel === 'weekly' && goal.type === 'numeric' && (
-                          <WeeklyDailyBreakdown 
-                            goal={goal}
-                            weekStart={viewMetadata.weekly?.weekStart}
-                            weekEnd={viewMetadata.weekly?.weekEnd}
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </main>
-
-      {/* Goal Modal */}
-      {showModal && (
-        <GoalModal 
-          onClose={() => setShowModal(false)}
-          defaultView="hierarchy"
-        />
-      )}
+      </div>
     </div>
   )
 }
