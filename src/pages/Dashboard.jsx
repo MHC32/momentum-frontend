@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // frontend/src/pages/Dashboard.jsx
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * QuarterTabs - Design EXACT du wireframe
  * 

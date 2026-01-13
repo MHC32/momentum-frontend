@@ -163,4 +163,4 @@ function GoalCardChecklist({ goal, onStepToggle, onMenuClick }) {
   )
 }
 
-export default GoalCardChecklist
+export default GoalCardChecklist 
