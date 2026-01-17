@@ -1,12 +1,12 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/immutability */
 /**
  * GoalsHierarchy - PAGE PRINCIPALE DES OBJECTIFS
  * 
- * 🆕 VERSION AVEC SIDEBAR + MODAL:
- * - Sidebar comme Dashboard
- * - GoalModal intégré
- * - Backend API complet
- * - Redux state management
+ * 🆕 VERSION AVEC AGRÉGATION HEBDOMADAIRE:
+ * - 1 carte par type d'objectif (commits, épargne, etc.)
+ * - Données agrégées pour la semaine
+ * - Compatible avec le wireframe "83 commits GitHub"
  */
 
 import { useState, useEffect } from 'react'
@@ -18,7 +18,8 @@ import {
   getWeeklyGoals,
   getDailyGoals,
   updateProgress,
-  completeStep
+  completeStep,
+  refreshWeeklyGoals // 🆕 Importé
 } from '../redux/slices/goalSlice'
 
 // Layout
@@ -44,7 +45,6 @@ import DailyChecklistItem from '../components/goals/DailyChecklistItem'
 // Modal
 import GoalModal from '../components/GoalModal'
 
-
 function GoalsHierarchy() {
   const dispatch = useDispatch()
   
@@ -53,7 +53,7 @@ function GoalsHierarchy() {
     annualGoals,
     quarterlyGoals,
     monthlyGoals,
-    weeklyGoals,
+    weeklyGoals, // 🆕 Contient les objectifs AGRÉGÉS par type
     dailyGoals,
     focusGoals,
     viewMetadata,
@@ -102,6 +102,7 @@ function GoalsHierarchy() {
 
       case 'weekly':
         console.log('📡 Fetching weekly goals for week ' + week)
+        dispatch(refreshWeeklyGoals()) // 🆕 Réinitialiser avant de charger
         dispatch(getWeeklyGoals({ week, filters }))
         break
 
@@ -117,15 +118,14 @@ function GoalsHierarchy() {
 
   // ==================== DEBUG LOGS ====================
   useEffect(() => {
-    // Log pour debugger les données weekly
+    // Log pour debugger les données weekly AGRÉGÉES
     if (level === 'weekly' && weeklyGoals.length > 0) {
-      console.log('🔍 DEBUG Weekly Goals Data:')
+      console.log('🔍 DEBUG Aggregated Weekly Goals:')
       weeklyGoals.forEach((goal, index) => {
         console.log(`Goal ${index + 1}: ${goal.title}`)
-        console.log('Daily Data:', goal.dailyData)
-        if (goal.dailyData && goal.dailyData.length > 7) {
-          console.warn(`⚠️ Goal "${goal.title}" a ${goal.dailyData.length} jours (devrait être 7)`)
-          console.log('Contenu dupliqué? Voici les jours:', goal.dailyData.map(d => d.day))
+        console.log(`  Progress: ${goal.currentWeekValue || goal.current_value}/${goal.weekTarget || goal.target_value}`)
+        if (goal.dailyData && goal.dailyData.length > 0) {
+          console.log(`  Daily Data: ${goal.dailyData.map(d => `${d.day}:${d.value !== null ? d.value : '-'}`).join(', ')}`)
         }
       })
     }
@@ -154,13 +154,22 @@ function GoalsHierarchy() {
 
   const handleMenuClick = (goalId) => {
     console.log('📋 Menu clicked for goal:', goalId)
-    // TODO: Ouvrir menu contextuel (edit, delete, etc.)
-    // Pour l'instant, ouvrir en édition
-    const goal = [...annualGoals, ...quarterlyGoals, ...monthlyGoals, ...weeklyGoals, ...dailyGoals]
-      .find(g => g._id === goalId)
+    
+    // Chercher dans tous les tableaux d'objectifs
+    const allGoals = [
+      ...annualGoals,
+      ...quarterlyGoals,
+      ...monthlyGoals,
+      ...weeklyGoals,
+      ...dailyGoals
+    ]
+    
+    const goal = allGoals.find(g => g._id === goalId)
     
     if (goal) {
       handleEditGoal(goal)
+    } else {
+      console.warn('Goal not found for menu click:', goalId)
     }
   }
 
@@ -265,27 +274,6 @@ function GoalsHierarchy() {
     }
     
     return dailyData
-  }
-
-  // Fonction pour extraire les jours uniques (par nom de jour)
-  const getUniqueDays = (dailyData) => {
-    if (!dailyData || !Array.isArray(dailyData)) return []
-    
-    const uniqueDays = []
-    const seenDays = new Set()
-    
-    dailyData.forEach(day => {
-      if (!seenDays.has(day.day)) {
-        seenDays.add(day.day)
-        uniqueDays.push(day)
-      }
-    })
-    
-    if (uniqueDays.length < dailyData.length) {
-      console.warn(`⚠️ Doublons détectés: ${dailyData.length} -> ${uniqueDays.length} jours uniques`)
-    }
-    
-    return uniqueDays.slice(0, 7) // Toujours limiter à 7 jours
   }
 
   // ==================== RENDER HELPERS ====================
@@ -418,7 +406,7 @@ function GoalsHierarchy() {
 
   return (
     <div className="flex min-h-screen">
-      {/* 🆕 SIDEBAR INTÉGRÉ */}
+      {/* SIDEBAR */}
       <Sidebar />
       
       {/* MAIN CONTENT */}
@@ -428,7 +416,7 @@ function GoalsHierarchy() {
           <PageHeader 
             title="Mes Objectifs 2026"
             subtitle="Transforme tes rêves en actions concrètes"
-            buttonText="+ Nouvel objectif"
+            buttonText="Nouvel objectif"
             onButtonClick={handleCreateGoal}
           />
 
@@ -561,9 +549,9 @@ function GoalsHierarchy() {
                 </GoalsGrid>
               )}
 
-              {/* VUE WEEKLY */}
+              {/* 🆕 VUE WEEKLY - AGRÉGÉE PAR TYPE */}
               {level === 'weekly' && (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {weeklyGoals.length === 0 ? (
                     <div className="text-center py-20" style={{ color: '#8BA3B8' }}>
                       <div className="text-6xl mb-4">📊</div>
@@ -571,24 +559,70 @@ function GoalsHierarchy() {
                       <p>Les objectifs apparaîtront ici après décomposition automatique</p>
                     </div>
                   ) : (
-                    weeklyGoals.map((goal) => {
-                      // Nettoyer les données dailyData pour éviter les doublons
-                      const cleanedDailyData = cleanDailyData(goal.dailyData || goal._doc?.dailyData || [])
-                      
-                      return (
-                        <WeeklyGoalCard 
-                          key={goal._id}
-                          goal={{
-                            id: goal._id,
-                            title: goal.title,
-                            currentWeekValue: goal.current_value,
-                            weekTarget: goal.target_value,
-                            dailyData: cleanedDailyData
-                          }}
-                          onMenuClick={() => handleMenuClick(goal._id)}
-                        />
-                      )
-                    })
+                    // Afficher 1 carte par type d'objectif agrégé
+                    weeklyGoals.map((goalType, index) => (
+                      <WeeklyGoalCard 
+                        key={goalType.id || goalType._id || `weekly-goal-${index}`}
+                        goal={{
+                          id: goalType.id || goalType._id,
+                          _id: goalType._id || goalType.id, // 🆕 Pour compatibilité
+                          title: goalType.title || `${goalType.weekTarget || goalType.target_value || 0} ${goalType.unit || ''}`,
+                          currentWeekValue: goalType.currentWeekValue || goalType.current_value || 0,
+                          weekTarget: goalType.weekTarget || goalType.target_value || 0,
+                          unit: goalType.unit || 'default',
+                          dailyData: cleanDailyData(goalType.dailyData || [])
+                        }}
+                        onMenuClick={handleMenuClick}
+                      />
+                    ))
+                  )}
+                  
+                  {/* Objectifs personnels cette semaine */}
+                  {viewMetadata?.weekly?.personalGoals && viewMetadata.weekly.personalGoals.length > 0 && (
+                    <div className="mt-8">
+                      <h3 className="text-xl font-bold mb-4" style={{ color: '#7BBDE8' }}>
+                        Objectifs personnels cette semaine
+                      </h3>
+                      <div className="space-y-3">
+                        {viewMetadata.weekly.personalGoals.map((goal) => (
+                          <div 
+                            key={goal._id}
+                            className="p-4 rounded-xl transition-all"
+                            style={{
+                              background: 'rgba(0, 29, 57, 0.3)',
+                              border: '1px solid rgba(110, 162, 179, 0.15)'
+                            }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div 
+                                  className="font-semibold"
+                                  style={{ color: '#E8F1F5' }}
+                                >
+                                  {goal.title}
+                                </div>
+                                {goal.deadline && (
+                                  <div 
+                                    className="text-xs mt-1"
+                                    style={{ color: '#8BA3B8' }}
+                                  >
+                                    Échéance: {new Date(goal.deadline).toLocaleDateString('fr-FR')}
+                                  </div>
+                                )}
+                              </div>
+                              <div 
+                                className="text-sm font-semibold"
+                                style={{ 
+                                  color: goal.completed ? '#10B981' : '#7BBDE8'
+                                }}
+                              >
+                                {goal.completed ? '✓ Terminé' : 'En cours'}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
@@ -644,7 +678,7 @@ function GoalsHierarchy() {
         </div>
       </main>
 
-      {/* 🆕 GOAL MODAL */}
+      {/* GOAL MODAL */}
       {isModalOpen && (
         <GoalModal
           goal={editingGoal}

@@ -16,52 +16,91 @@ import api from '../utils/axios'
 
 // Get annual goals
 const getAnnualGoals = async (filters = {}) => {
-  const cleanFilters = Object.fromEntries(
-    Object.entries(filters).filter(([_, v]) => v != null && v !== '')
-  );
-  const params = new URLSearchParams(cleanFilters);
-  const response = await api.get(`/goals/annual?${params}`);
-  return response.data;
+  try {
+    const cleanFilters = Object.fromEntries(
+      Object.entries(filters).filter(([_, v]) => v != null && v !== '')
+    );
+    const params = new URLSearchParams(cleanFilters);
+    const response = await api.get(`/goals/annual?${params}`);
+    console.log('📡 [goalService] getAnnualGoals - Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [goalService] getAnnualGoals - Error:', error);
+    throw error;
+  }
 }
 
 // Get quarterly goals
 const getQuarterlyGoals = async (quarter, filters = {}) => {
-  const cleanFilters = Object.fromEntries(
-    Object.entries(filters).filter(([_, v]) => v != null && v !== '')
-  );
-  const params = new URLSearchParams(cleanFilters);
-  const response = await api.get(`/goals/quarterly/${quarter}?${params}`);
-  return response.data;
+  try {
+    const cleanFilters = Object.fromEntries(
+      Object.entries(filters).filter(([_, v]) => v != null && v !== '')
+    );
+    const params = new URLSearchParams(cleanFilters);
+    const response = await api.get(`/goals/quarterly/${quarter}?${params}`);
+    console.log('📡 [goalService] getQuarterlyGoals - Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [goalService] getQuarterlyGoals - Error:', error);
+    throw error;
+  }
 }
 
 // Get monthly goals
 const getMonthlyGoals = async (month, filters = {}) => {
-  const cleanFilters = Object.fromEntries(
-    Object.entries(filters).filter(([_, v]) => v != null && v !== '')
-  );
-  const params = new URLSearchParams(cleanFilters);
-  const response = await api.get(`/goals/monthly/${month}?${params}`);
-  return response.data;
+  try {
+    const cleanFilters = Object.fromEntries(
+      Object.entries(filters).filter(([_, v]) => v != null && v !== '')
+    );
+    const params = new URLSearchParams(cleanFilters);
+    const response = await api.get(`/goals/monthly/${month}?${params}`);
+    console.log('📡 [goalService] getMonthlyGoals - Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [goalService] getMonthlyGoals - Error:', error);
+    throw error;
+  }
 }
 
-// Get weekly goals
+// 🆕 MODIFIÉ: Get weekly goals - RETOURNE DES DONNÉES AGRÉGÉES
 const getWeeklyGoals = async (week, filters = {}) => {
-  const cleanFilters = Object.fromEntries(
-    Object.entries(filters).filter(([_, v]) => v != null && v !== '')
-  );
-  const params = new URLSearchParams(cleanFilters);
-  const response = await api.get(`/goals/weekly/${week}?${params}`);
-  return response.data;
+  try {
+    console.log(`📡 [goalService] getWeeklyGoals - Week ${week}, filters:`, filters);
+    
+    const cleanFilters = Object.fromEntries(
+      Object.entries(filters).filter(([_, v]) => v != null && v !== '')
+    );
+    
+    const params = new URLSearchParams(cleanFilters);
+    const response = await api.get(`/goals/weekly/${week}?${params}`);
+    
+    console.log('✅ [goalService] getWeeklyGoals - Response structure:', {
+      hasGoals: !!response.data?.goals,
+      goalsCount: response.data?.goals?.length || 0,
+      isAggregated: response.data?.goals?.[0]?.dailyData !== undefined
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('❌ [goalService] getWeeklyGoals - Error:', error);
+    throw error;
+  }
 }
 
 // Get daily goals + Focus du jour
 const getDailyGoals = async (filters = {}) => {
-  const cleanFilters = Object.fromEntries(
-    Object.entries(filters).filter(([_, v]) => v != null && v !== '')
-  );
-  const params = new URLSearchParams(cleanFilters);
-  const response = await api.get(`/goals/daily?${params}`);
-  return response.data;
+  try {
+    const cleanFilters = Object.fromEntries(
+      Object.entries(filters).filter(([_, v]) => v != null && v !== '')
+    );
+    const params = new URLSearchParams(cleanFilters);
+    const response = await api.get(`/goals/daily?${params}`);
+    console.log('📡 [goalService] getDailyGoals - Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [goalService] getDailyGoals - Error:', error);
+    throw error;
+  }
 }
 
 // ==================== OBJECTIFS PERSONNELS (NOUVEAU V2) ====================
@@ -73,12 +112,18 @@ const getDailyGoals = async (filters = {}) => {
  * avec filtrage par status (ongoing/completed) et catégorie
  */
 const getPersonalGoals = async (filters = {}) => {
-  const cleanFilters = Object.fromEntries(
-    Object.entries(filters).filter(([_, v]) => v != null && v !== '')
-  );
-  const params = new URLSearchParams(cleanFilters);
-  const response = await api.get(`/goals/personal?${params}`);
-  return response.data;
+  try {
+    const cleanFilters = Object.fromEntries(
+      Object.entries(filters).filter(([_, v]) => v != null && v !== '')
+    );
+    const params = new URLSearchParams(cleanFilters);
+    const response = await api.get(`/goals/personal?${params}`);
+    console.log('📡 [goalService] getPersonalGoals - Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [goalService] getPersonalGoals - Error:', error);
+    throw error;
+  }
 }
 
 // ==================== CRUD DE BASE ====================
@@ -92,50 +137,98 @@ const getPersonalGoals = async (filters = {}) => {
 
 // Create goal
 const createGoal = async (goalData) => {
-  const response = await api.post('/goals', goalData);
-  return response.data;
+  try {
+    console.log('📡 [goalService] createGoal - Data:', goalData);
+    const response = await api.post('/goals', goalData);
+    console.log('✅ [goalService] createGoal - Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [goalService] createGoal - Error:', error);
+    throw error;
+  }
 }
 
 // Get all goals (ANCIENNE MÉTHODE - gardée pour compatibilité)
 const getGoals = async (filters = {}) => {
-  const cleanFilters = Object.fromEntries(
-    Object.entries(filters).filter(([_, v]) => v != null && v !== '')
-  );
-  const params = new URLSearchParams(cleanFilters);
-  const response = await api.get(`/goals?${params}`);
-  return response.data;
+  try {
+    const cleanFilters = Object.fromEntries(
+      Object.entries(filters).filter(([_, v]) => v != null && v !== '')
+    );
+    const params = new URLSearchParams(cleanFilters);
+    const response = await api.get(`/goals?${params}`);
+    console.log('📡 [goalService] getGoals - Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [goalService] getGoals - Error:', error);
+    throw error;
+  }
 }
 
 // Get single goal
 const getGoalById = async (goalId) => {
-  const response = await api.get(`/goals/${goalId}`);
-  return response.data;
+  try {
+    console.log('📡 [goalService] getGoalById - ID:', goalId);
+    const response = await api.get(`/goals/${goalId}`);
+    console.log('✅ [goalService] getGoalById - Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [goalService] getGoalById - Error:', error);
+    throw error;
+  }
 }
 
 // Update goal
 const updateGoal = async (goalId, goalData) => {
-  const response = await api.put(`/goals/${goalId}`, goalData);
-  return response.data;
+  try {
+    console.log('📡 [goalService] updateGoal - ID:', goalId, 'Data:', goalData);
+    const response = await api.put(`/goals/${goalId}`, goalData);
+    console.log('✅ [goalService] updateGoal - Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [goalService] updateGoal - Error:', error);
+    throw error;
+  }
 }
 
 // Delete goal
 const deleteGoal = async (goalId) => {
-  const response = await api.delete(`/goals/${goalId}`);
-  return response.data;
+  try {
+    console.log('📡 [goalService] deleteGoal - ID:', goalId);
+    const response = await api.delete(`/goals/${goalId}`);
+    console.log('✅ [goalService] deleteGoal - Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [goalService] deleteGoal - Error:', error);
+    throw error;
+  }
 }
 
 // ==================== PROGRESSION ====================
 
 // Update progress
 const updateProgress = async (goalId, progressData) => {
-  const response = await api.put(`/goals/${goalId}/progress`, progressData);
-  return response.data;
+  try {
+    console.log('📡 [goalService] updateProgress - ID:', goalId, 'Data:', progressData);
+    const response = await api.put(`/goals/${goalId}/progress`, progressData);
+    console.log('✅ [goalService] updateProgress - Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [goalService] updateProgress - Error:', error);
+    throw error;
+  }
 }
 
 // Complete/uncomplete step
 const completeStep = async (goalId, stepId) => {
-  const response = await api.put(`/goals/${goalId}/steps/${stepId}/complete`, {});
-  return response.data;
+  try {
+    console.log('📡 [goalService] completeStep - GoalID:', goalId, 'StepID:', stepId);
+    const response = await api.put(`/goals/${goalId}/steps/${stepId}/complete`, {});
+    console.log('✅ [goalService] completeStep - Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [goalService] completeStep - Error:', error);
+    throw error;
+  }
 }
 
 // Recalculate from children (DEPRECATED - géré automatiquement par le backend V2)
@@ -143,8 +236,13 @@ const recalculateFromChildren = async (goalId) => {
   // NOTE: Cette fonction est deprecated dans V2
   // La propagation est automatique via propagateProgressUp()
   console.warn('[goalService] recalculateFromChildren is deprecated in V2');
-  const response = await api.post(`/goals/${goalId}/recalculate`, {});
-  return response.data;
+  try {
+    const response = await api.post(`/goals/${goalId}/recalculate`, {});
+    return response.data;
+  } catch (error) {
+    console.error('❌ [goalService] recalculateFromChildren - Error:', error);
+    throw error;
+  }
 }
 
 // ==================== INTEGRATIONS ====================
@@ -153,16 +251,26 @@ const recalculateFromChildren = async (goalId) => {
 const syncCommitsGoal = async () => {
   // NOTE: Dans V2, le sync se fait automatiquement via webhooks GitHub
   console.warn('[goalService] syncCommitsGoal is deprecated - using webhooks in V2');
-  const response = await api.post('/goals/sync-commits', {});
-  return response.data;
+  try {
+    const response = await api.post('/goals/sync-commits', {});
+    return response.data;
+  } catch (error) {
+    console.error('❌ [goalService] syncCommitsGoal - Error:', error);
+    throw error;
+  }
 }
 
 // Sync book goal (DEPRECATED - remplacé par webhooks)
 const syncBookGoal = async (projectId) => {
   // NOTE: Dans V2, le sync se fait automatiquement via webhooks
   console.warn('[goalService] syncBookGoal is deprecated - using webhooks in V2');
-  const response = await api.post(`/goals/sync-book/${projectId}`, {});
-  return response.data;
+  try {
+    const response = await api.post(`/goals/sync-book/${projectId}`, {});
+    return response.data;
+  } catch (error) {
+    console.error('❌ [goalService] syncBookGoal - Error:', error);
+    throw error;
+  }
 }
 
 // ==================== STATS ====================
@@ -175,12 +283,18 @@ const syncBookGoal = async (projectId) => {
  * Nouveau: /goals/stats
  */
 const getGoalsStats = async (filters = {}) => {
-  const cleanFilters = Object.fromEntries(
-    Object.entries(filters).filter(([_, v]) => v != null && v !== '')
-  );
-  const params = new URLSearchParams(cleanFilters);
-  const response = await api.get(`/goals/stats?${params}`);
-  return response.data;
+  try {
+    const cleanFilters = Object.fromEntries(
+      Object.entries(filters).filter(([_, v]) => v != null && v !== '')
+    );
+    const params = new URLSearchParams(cleanFilters);
+    const response = await api.get(`/goals/stats?${params}`);
+    console.log('📡 [goalService] getGoalsStats - Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [goalService] getGoalsStats - Error:', error);
+    throw error;
+  }
 }
 
 // ==================== RISE WEBHOOKS (NOUVEAU V2) ====================
@@ -192,8 +306,14 @@ const getGoalsStats = async (filters = {}) => {
  * - Obtenir les objectifs avec Rise integration activée
  */
 const getRiseIntegratedGoals = async () => {
-  const response = await api.get('/webhooks/rise/goals');
-  return response.data;
+  try {
+    const response = await api.get('/webhooks/rise/goals');
+    console.log('📡 [goalService] getRiseIntegratedGoals - Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [goalService] getRiseIntegratedGoals - Error:', error);
+    throw error;
+  }
 }
 
 // ==================== EXPORT ====================
@@ -203,7 +323,7 @@ const goalService = {
   getAnnualGoals,
   getQuarterlyGoals,
   getMonthlyGoals,
-  getWeeklyGoals,
+  getWeeklyGoals, // 🆕 Retourne maintenant des données agrégées
   getDailyGoals,
   getPersonalGoals,
   

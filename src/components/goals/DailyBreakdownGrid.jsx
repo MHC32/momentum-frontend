@@ -1,22 +1,20 @@
-/**
- * DailyBreakdownGrid - Design EXACT du wireframe
- * 
- * WIREFRAME SPECS (observé dans Image 5):
- * - Grid 7 colonnes (Lun-Dim)
- * - 3 états visuels différents:
- *   1. Complété: background vert transparent, valeur verte
- *   2. Aujourd'hui: border bleu épais 2px, background bleu très transparent
- *   3. Futur: background gris foncé, valeur "-", opacity réduite
- * - Gap: 8px entre les jours
- * - Padding: 12px par jour
- * - Border-radius: 12px
- * - Label: 11px, gris
- * - Valeur complétée: 20px, vert, 700
- * - Valeur aujourd'hui: 20px, normal
- * - Valeur futur: gris, opacity 0.5
- */
-
 function DailyBreakdownGrid({ days }) {
+  // S'assurer d'avoir exactement 7 jours
+  const displayDays = [...Array(7)].map((_, index) => {
+    if (days && days[index]) {
+      return {
+        ...days[index],
+        day: days[index].day || ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'][index]
+      };
+    }
+    return {
+      day: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'][index],
+      value: null,
+      isCompleted: false,
+      isToday: false
+    };
+  });
+
   return (
     <div 
       className="grid gap-2"
@@ -24,13 +22,16 @@ function DailyBreakdownGrid({ days }) {
         gridTemplateColumns: 'repeat(7, 1fr)'
       }}
     >
-      {days.map((day, index) => {
+      {displayDays.map((day, index) => {
         // Déterminer le style selon l'état
         let cardStyle = {}
         let labelStyle = {}
         let valueStyle = {}
 
-        if (day.isCompleted) {
+        // Jour futur sans valeur? (valeur = null)
+        const isFuture = day.value === null;
+        
+        if (day.isCompleted && !isFuture) {
           // État 1: Complété (Lun, Mar)
           cardStyle = {
             background: 'rgba(16, 185, 129, 0.15)',
@@ -44,7 +45,7 @@ function DailyBreakdownGrid({ days }) {
             fontWeight: 700,
             fontSize: '20px'
           }
-        } else if (day.isToday) {
+        } else if (day.isToday && !isFuture) {
           // État 2: Aujourd'hui (Mer)
           cardStyle = {
             background: 'rgba(123, 189, 232, 0.08)',
@@ -59,8 +60,8 @@ function DailyBreakdownGrid({ days }) {
             fontWeight: 600,
             fontSize: '20px'
           }
-        } else {
-          // État 3: Futur (Jeu-Dim)
+        } else if (isFuture) {
+          // État 3: Futur (Jeu-Dim) - sans valeur
           cardStyle = {
             background: 'rgba(15, 20, 25, 0.5)',
             border: '1px solid rgba(110, 162, 179, 0.1)',
@@ -71,6 +72,19 @@ function DailyBreakdownGrid({ days }) {
           }
           valueStyle = {
             color: '#8BA3B8',
+            fontSize: '20px'
+          }
+        } else {
+          // État 4: Passé non complété
+          cardStyle = {
+            background: 'rgba(0, 29, 57, 0.3)',
+            border: '1px solid rgba(110, 162, 179, 0.15)'
+          }
+          labelStyle = {
+            color: '#8BA3B8'
+          }
+          valueStyle = {
+            color: '#E8F1F5',
             fontSize: '20px'
           }
         }

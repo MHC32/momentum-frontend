@@ -11,12 +11,116 @@ import goalService from '../../services/goalService'
  * - Garde hierarchyGoals et checklistGoals pour compatibilité
  */
 
+// 🆕 Helper pour formater les données agrégées de l'API
+// Remplacer la fonction formatAggregatedWeeklyGoals par cette version améliorée :
+const formatAggregatedWeeklyGoals = (apiData) => {
+  console.log('🔄 formatAggregatedWeeklyGoals - Input:', apiData);
+  
+  // Si l'API renvoie déjà les données agrégées correctement
+  if (apiData && apiData.goals && Array.isArray(apiData.goals)) {
+    console.log('📦 API returned aggregated goals:', apiData.goals.length);
+    
+    // Vérifier la structure des données
+    return apiData.goals.map(goal => {
+      // S'assurer que la structure est correcte
+      const weekTarget = goal.weekTarget || goal.target_value || goal.target || 0;
+      const currentWeekValue = goal.currentWeekValue || goal.current_value || goal.current || 0;
+      const unit = goal.unit || 'default';
+      
+      // 🆕 Générer un titre convivial
+      let title = goal.title;
+      if (!title) {
+        if (unit === 'commits') {
+          title = `${weekTarget} commits GitHub`;
+        } else if (unit === '€') {
+          title = `${weekTarget.toLocaleString()} €`;
+        } else {
+          title = `${weekTarget} ${unit}`;
+        }
+      }
+      
+      const formattedGoal = {
+        id: goal.id || goal._id || `${unit}_week_${apiData.week || 1}_${Date.now()}`,
+        _id: goal._id || goal.id, // 🆕 Toujours inclure _id
+        title: title,
+        currentWeekValue: currentWeekValue,
+        weekTarget: weekTarget,
+        unit: unit,
+        dailyData: goal.dailyData || []
+      };
+      
+      console.log(`  Formatted: ${formattedGoal.title} (${formattedGoal.currentWeekValue}/${formattedGoal.weekTarget})`);
+      return formattedGoal;
+    });
+  }
+  
+  // Fallback: Si l'API retourne des objectifs individuels, les agréger nous-mêmes
+  console.warn('⚠️ API returned individual goals, attempting to aggregate manually');
+  
+  // D'abord, trouver tous les objectifs
+  let individualGoals = [];
+  
+  if (apiData && apiData.goals && Array.isArray(apiData.goals)) {
+    individualGoals = apiData.goals;
+  } else if (apiData && Array.isArray(apiData)) {
+    individualGoals = apiData;
+  } else if (apiData && apiData.data && Array.isArray(apiData.data.goals)) {
+    individualGoals = apiData.data.goals;
+  }
+  
+  if (individualGoals.length === 0) {
+    console.log('❌ No individual goals found to aggregate');
+    return [];
+  }
+  
+  console.log(`Found ${individualGoals.length} individual goals to aggregate`);
+  
+  // Regrouper par unité
+  const goalsByUnit = {};
+  
+  individualGoals.forEach(goal => {
+    const unit = goal.unit || 'default';
+    
+    if (!goalsByUnit[unit]) {
+      // 🆕 Déterminer le titre selon l'unité
+      let title = '';
+      if (unit === 'commits') {
+        title = 'commits GitHub';
+      } else if (unit === '€') {
+        title = 'Épargne';
+      } else {
+        title = unit;
+      }
+      
+      goalsByUnit[unit] = {
+        id: `${unit}_week_${apiData.week || 1}_aggregated`,
+        _id: `${unit}_week_${apiData.week || 1}_aggregated`,
+        title: title,
+        currentWeekValue: 0,
+        weekTarget: 0,
+        unit: unit,
+        dailyData: [] // 🆕 À remplir plus tard si disponible
+      };
+    }
+    
+    // Ajouter les valeurs
+    goalsByUnit[unit].currentWeekValue += goal.current_value || 0;
+    goalsByUnit[unit].weekTarget += goal.target_value || 0;
+    
+    console.log(`  Added ${goal.title}: ${goal.current_value || 0}/${goal.target_value || 0} ${unit}`);
+  });
+  
+  const aggregatedGoals = Object.values(goalsByUnit);
+  console.log(`Aggregated into ${aggregatedGoals.length} goal types:`, aggregatedGoals);
+  
+  return aggregatedGoals;
+};
 const initialState = {
   // Nouvelles vues V2
   annualGoals: [],
   quarterlyGoals: [],
   monthlyGoals: [],
-  weeklyGoals: [],
+  weeklyGoals: [], // 🆕 Contiendra les objectifs AGRÉGÉS par type
   dailyGoals: [],
   focusGoals: [], // Focus du jour
   personalGoals: [],
@@ -39,12 +143,19 @@ const initialState = {
     date: null
   },
   
-  // Metadata des vues
+  // Metadata des vues - MODIFIÉ POUR weekly
   viewMetadata: {
     annual: { count: 0, goalsByCategory: {} },
     quarterly: { quarter: 1, breakdown: 0, personal: 0 },
     monthly: { month: 1, monthName: '', tasksCount: 0 },
-    weekly: { week: 1, weekStart: null, weekEnd: null },
+    weekly: { 
+      week: 1, 
+      weekStart: null, 
+      weekEnd: null,
+      personalGoals: [], // 🆕 Ajouté pour stocker les objectifs personnels
+      breakdown: 0,
+      personal: 0
+    },
     daily: { date: null, dateFormatted: '', focusProgress: 0 }
   },
   
@@ -121,7 +232,7 @@ export const getMonthlyGoals = createAsyncThunk(
   }
 )
 
-// Get weekly goals
+// Get weekly goals - 🆕 RETOURNE DES DONNÉES AGRÉGÉES
 export const getWeeklyGoals = createAsyncThunk(
   'goals/getWeekly',
   async ({ week, filters }, thunkAPI) => {
@@ -424,6 +535,12 @@ export const goalSlice = createSlice({
       if (state.currentGoal?._id === updatedGoal._id) {
         state.currentGoal = updatedGoal
       }
+    },
+    
+    // 🆕 Ajouter une action pour forcer le rechargement des données weekly
+    refreshWeeklyGoals: (state) => {
+      console.log('🔄 [goalSlice] refreshWeeklyGoals');
+      state.weeklyGoals = [];
     }
   },
   
@@ -514,31 +631,44 @@ export const goalSlice = createSlice({
         state.error = action.payload;
       })
       
-      // ==================== VUE HEBDOMADAIRE ====================
+      // ==================== 🆕 VUE HEBDOMADAIRE - AGRÉGÉE ====================
       .addCase(getWeeklyGoals.pending, (state) => {
+        console.log('⏳ [goalSlice] getWeeklyGoals.pending - AGGREGATED');
         state.isLoading = true;
         state.error = null;
       })
       .addCase(getWeeklyGoals.fulfilled, (state, action) => {
-        console.log('✅ [goalSlice] getWeeklyGoals.fulfilled', action.payload);
+        console.log('✅ [goalSlice] getWeeklyGoals.fulfilled - AGGREGATED', action.payload);
         state.isLoading = false;
         state.isSuccess = true;
         
         const data = action.payload.data || action.payload;
-        state.weeklyGoals = data.goals || [];
+        
+        // 🆕 FORMATION DES DONNÉES AGRÉGÉES
+        state.weeklyGoals = formatAggregatedWeeklyGoals(data);
+        
+        // 🆕 METADONNÉES MISES À JOUR
         state.viewMetadata.weekly = {
           week: data.week || 1,
           year: data.year,
           weekStart: data.weekStart,
           weekEnd: data.weekEnd,
+          personalGoals: data.personalGoals || [],
           breakdown: data.breakdown || 0,
-          personal: data.personal || 0,
-          tasksCount: data.tasksCount || 0,
-          goalsWithDailyBreakdown: data.goalsWithDailyBreakdown || [],
-          tasks: data.tasks || []
+          personal: data.personal || 0
         };
+        
+        // 🆕 DEBUG: Vérifier ce qui a été stocké
+        console.log(`📊 Stored ${state.weeklyGoals.length} aggregated weekly goals:`);
+        state.weeklyGoals.forEach((goal, index) => {
+          console.log(`  ${index + 1}. ${goal.title} - ${goal.currentWeekValue}/${goal.weekTarget} ${goal.unit}`);
+          if (goal.dailyData && goal.dailyData.length > 0) {
+            console.log(`     Daily: ${goal.dailyData.map(d => `${d.day}:${d.value !== null ? d.value : '-'}`).join(', ')}`);
+          }
+        });
       })
       .addCase(getWeeklyGoals.rejected, (state, action) => {
+        console.error('❌ [goalSlice] getWeeklyGoals.rejected - AGGREGATED', action.payload);
         state.isLoading = false;
         state.isError = true;
         state.error = action.payload;
@@ -555,7 +685,7 @@ export const goalSlice = createSlice({
         state.isSuccess = true;
         
         const data = action.payload.data || action.payload;
-        state.dailyGoals = data.dailyGoals || [];
+        state.dailyGoals = data.goals || [];
         state.focusGoals = data.focus?.goals || [];
         state.viewMetadata.daily = {
           date: data.date,
@@ -794,7 +924,8 @@ export const {
   goalCreatedRealtime,
   goalUpdatedRealtime,
   goalDeletedRealtime,
-  goalProgressUpdatedRealtime
+  goalProgressUpdatedRealtime,
+  refreshWeeklyGoals // 🆕 Exporté
 } = goalSlice.actions
 
 export default goalSlice.reducer
