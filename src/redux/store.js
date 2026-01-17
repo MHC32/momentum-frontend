@@ -3,6 +3,7 @@ import authReducer from './slices/authSlice'
 import projectReducer from './slices/projectSlice'
 import taskReducer from './slices/taskSlice'
 import goalReducer from './slices/goalSlice'
+import dashboardReducer from './slices/dashboardSlice'
 
 export const store = configureStore({
   reducer: {
@@ -10,5 +11,6 @@ export const store = configureStore({
     projects: projectReducer,
     tasks: taskReducer,
     goals: goalReducer,
+    dashboard: dashboardReducer,
   },
 })
